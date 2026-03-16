@@ -1,0 +1,134 @@
+[
+  {
+    "id": 0,
+    "commons_title": "File:RWS Tarot 00 Fool.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/90/RWS_Tarot_00_Fool.jpg",
+    "local_file": "assets/cards/major_arcana/00_fool.jpg"
+  },
+  {
+    "id": 1,
+    "commons_title": "File:RWS Tarot 01 Magician.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/de/RWS_Tarot_01_Magician.jpg",
+    "local_file": "assets/cards/major_arcana/01_magician.jpg"
+  },
+  {
+    "id": 2,
+    "commons_title": "File:RWS Tarot 02 High Priestess.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/88/RWS_Tarot_02_High_Priestess.jpg",
+    "local_file": "assets/cards/major_arcana/02_high_priestess.jpg"
+  },
+  {
+    "id": 3,
+    "commons_title": "File:RWS Tarot 03 Empress.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d2/RWS_Tarot_03_Empress.jpg",
+    "local_file": "assets/cards/major_arcana/03_empress.jpg"
+  },
+  {
+    "id": 4,
+    "commons_title": "File:RWS Tarot 04 Emperor.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c3/RWS_Tarot_04_Emperor.jpg",
+    "local_file": "assets/cards/major_arcana/04_emperor.jpg"
+  },
+  {
+    "id": 5,
+    "commons_title": "File:RWS Tarot 05 Hierophant.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/8d/RWS_Tarot_05_Hierophant.jpg",
+    "local_file": "assets/cards/major_arcana/05_hierophant.jpg"
+  },
+  {
+    "id": 6,
+    "commons_title": "File:RWS Tarot 06 Lovers.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/db/RWS_Tarot_06_Lovers.jpg",
+    "local_file": "assets/cards/major_arcana/06_lovers.jpg"
+  },
+  {
+    "id": 7,
+    "commons_title": "File:RWS Tarot 07 Chariot.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/9b/RWS_Tarot_07_Chariot.jpg",
+    "local_file": "assets/cards/major_arcana/07_chariot.jpg"
+  },
+  {
+    "id": 8,
+    "commons_title": "File:RWS Tarot 08 Strength.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f5/RWS_Tarot_08_Strength.jpg",
+    "local_file": "assets/cards/major_arcana/08_strength.jpg"
+  },
+  {
+    "id": 9,
+    "commons_title": "File:RWS Tarot 09 Hermit.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4d/RWS_Tarot_09_Hermit.jpg",
+    "local_file": "assets/cards/major_arcana/09_hermit.jpg"
+  },
+  {
+    "id": 10,
+    "commons_title": "File:RWS Tarot 10 Wheel of Fortune.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/RWS_Tarot_10_Wheel_of_Fortune.jpg",
+    "local_file": "assets/cards/major_arcana/10_wheel_of_fortune.jpg"
+  },
+  {
+    "id": 11,
+    "commons_title": "File:RWS Tarot 11 Justice.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e0/RWS_Tarot_11_Justice.jpg",
+    "local_file": "assets/cards/major_arcana/11_justice.jpg"
+  },
+  {
+    "id": 12,
+    "commons_title": "File:RWS Tarot 12 Hanged Man.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/2b/RWS_Tarot_12_Hanged_Man.jpg",
+    "local_file": "assets/cards/major_arcana/12_hanged_man.jpg"
+  },
+  {
+    "id": 13,
+    "commons_title": "File:RWS Tarot 13 Death.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d7/RWS_Tarot_13_Death.jpg",
+    "local_file": "assets/cards/major_arcana/13_death.jpg"
+  },
+  {
+    "id": 14,
+    "commons_title": "File:RWS Tarot 14 Temperance.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f8/RWS_Tarot_14_Temperance.jpg",
+    "local_file": "assets/cards/major_arcana/14_temperance.jpg"
+  },
+  {
+    "id": 15,
+    "commons_title": "File:RWS Tarot 15 Devil.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/55/RWS_Tarot_15_Devil.jpg",
+    "local_file": "assets/cards/major_arcana/15_devil.jpg"
+  },
+  {
+    "id": 16,
+    "commons_title": "File:RWS Tarot 16 Tower.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/53/RWS_Tarot_16_Tower.jpg",
+    "local_file": "assets/cards/major_arcana/16_tower.jpg"
+  },
+  {
+    "id": 17,
+    "commons_title": "File:RWS Tarot 17 Star.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/db/RWS_Tarot_17_Star.jpg",
+    "local_file": "assets/cards/major_arcana/17_star.jpg"
+  },
+  {
+    "id": 18,
+    "commons_title": "File:RWS Tarot 18 Moon.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/7f/RWS_Tarot_18_Moon.jpg",
+    "local_file": "assets/cards/major_arcana/18_moon.jpg"
+  },
+  {
+    "id": 19,
+    "commons_title": "File:RWS Tarot 19 Sun.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/17/RWS_Tarot_19_Sun.jpg",
+    "local_file": "assets/cards/major_arcana/19_sun.jpg"
+  },
+  {
+    "id": 20,
+    "commons_title": "File:RWS Tarot 20 Judgement.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/dd/RWS_Tarot_20_Judgement.jpg",
+    "local_file": "assets/cards/major_arcana/20_judgement.jpg"
+  },
+  {
+    "id": 21,
+    "commons_title": "File:RWS Tarot 21 World.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/ff/RWS_Tarot_21_World.jpg",
+    "local_file": "assets/cards/major_arcana/21_world.jpg"
+  }
+]

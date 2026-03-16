@@ -1,0 +1,222 @@
+[
+  {
+    "id": 0,
+    "name_zh": "愚人",
+    "name_en": "The Fool",
+    "image": "assets/cards/major_arcana/00_fool.jpg",
+    "visual_description": "穿着色彩斑斓的衣服，戴着像小丑一样的帽子，手舞足蹈，昂首阔步，站在悬崖边。右手拿着象征权力的权杖，肩上扛着装着经验的包袱，左手持白玫瑰，脚边跟着一只小白狗，远方有山脉，整张牌沐浴在白色阳光下。",
+    "summary_meaning": "象征开始、探索、冒险、纯真与潜力，也提醒自由与鲁莽之间只隔着一步。",
+    "upright_meaning": "代表新的开始、冒险精神、从零出发、进入新环境，以及愿意相信梦想的勇气。它也常暗示不拘形式的恋爱、艺术气质与对未来的开放态度。",
+    "reversed_meaning": "代表漂泊、鲁莽、轻浮、错失良机、方向感不足，或因为经验不足而走错路。也可能表示缺乏责任感，太凭本能行动。"
+  },
+  {
+    "id": 1,
+    "name_zh": "魔术师",
+    "name_en": "The Magician",
+    "image": "assets/cards/major_arcana/01_magician.jpg",
+    "visual_description": "魔术师右手高举权杖指向天空，左手食指指向地面，像连接天地的桥梁。桌上摆着权杖、圣杯、宝剑和星币，象征四元素。红袍象征热情，白色内衣象征纯洁，腰间盘着蛇，头顶是无限符号，四周盛开着红玫瑰与白百合。",
+    "summary_meaning": "象征沟通、启动、创造、调动资源和把想法落地的能力，关键在于意志与清晰度。",
+    "upright_meaning": "代表主动性、表达力、执行力和创造力，表示计划顺利推进、资源能够被调动、梦想有机会落地，也常暗示良师益友和清晰的沟通。",
+    "reversed_meaning": "代表失控、误导、优柔寡断、创造力不足，或虽有想法却无法真正行动。也可能表示方向错误、能量分散，爱情与计划停滞不前。"
+  },
+  {
+    "id": 2,
+    "name_zh": "女祭司",
+    "name_en": "The High Priestess",
+    "image": "assets/cards/major_arcana/02_high_priestess.jpg",
+    "visual_description": "女祭司安静端坐于石凳之上，手中抱着写有 Tora 的卷宗。她身旁是一黑一白两根柱子，象征明暗、是非与理性判断。白色头冠和长裙象征纯洁，身后有绿叶、果实与石榴，裙角露出月亮。",
+    "summary_meaning": "象征直觉、静观、洞察、理性判断与神秘知识，代表在安静中等待真正的时机。",
+    "upright_meaning": "代表判断力、洞察力、深层智慧、冷静坚持和精神性的理解。它也常象征独立女性、神秘学、学问、静水深流的爱与柏拉图式关系。",
+    "reversed_meaning": "代表无知、神经质、缺乏判断、盲目自大、单相思、挑剔或压抑直觉。也可能暗示身体较弱、精神上不够沉稳。"
+  },
+  {
+    "id": 3,
+    "name_zh": "皇后",
+    "name_en": "The Empress",
+    "image": "assets/cards/major_arcana/03_empress.jpg",
+    "visual_description": "皇后端坐在华丽的靠椅上，身旁有洁白的心形盾牌，里面是醒目的女性符号。长裙上布满果实，身后是森林与流水，前方是金黄色谷物。她头戴繁星桂冠，右手持权杖，整体画面丰盛而温暖。",
+    "summary_meaning": "象征母性、丰收、滋养、女性魅力、繁荣和大地般的生命力。",
+    "upright_meaning": "代表丰收、繁荣、母爱、婚姻、孕育、艺术才能与感性魅力，也暗示关系能够结果、生活有喜悦、事情逐渐成熟。",
+    "reversed_meaning": "代表欢乐消失、恋爱受挫、收获折损、迷惑、虚荣、任性、浪费，或把太多精力给了外界却忽略了照顾自己。"
+  },
+  {
+    "id": 4,
+    "name_zh": "皇帝",
+    "name_en": "The Emperor",
+    "image": "assets/cards/major_arcana/04_emperor.jpg",
+    "visual_description": "皇帝头戴皇冠，身着红袍，外覆盔甲，端坐在王座上。右手持古埃及十字架，王位上刻着四颗羊头，背景是严峻蜿蜒的山脉，整体充满权威、纪律与阳刚力量。",
+    "summary_meaning": "象征秩序、规则、权威、稳定、责任与掌控力，也有高处不胜寒的意味。",
+    "upright_meaning": "代表成功、意志力、责任感、领导能力、执行与处理能力，暗示一个值得信赖、能建立结构与稳定局面的人，感情上也可能对应成熟或年长对象。",
+    "reversed_meaning": "代表不成熟、武断、傲慢、固执、滥权、控制欲强，或缺乏真正的自信与稳定感。也可能表示冷酷与权力失衡。"
+  },
+  {
+    "id": 5,
+    "name_zh": "教宗",
+    "name_en": "The Hierophant",
+    "image": "assets/cards/major_arcana/05_hierophant.jpg",
+    "visual_description": "教宗身穿大红袍，头戴三层皇冠，右手做出祝福手势，左手持十字权杖。面前站着两位信徒，脚边有两把钥匙，象征智慧与神秘之门。整体画面呈现宗教、制度与精神教导的氛围。",
+    "summary_meaning": "象征传统、规范、精神教育、心灵指引、道德秩序与群体价值。",
+    "upright_meaning": "代表贵人相助、长辈或老师指引、制度与学校、机关团体、仪式、成熟而深情的爱、良缘以及专业人士的帮助。",
+    "reversed_meaning": "代表打破传统、孤立无助、保守固执、依赖、缘分浅薄、失信或过度叛逆。也可能表示不宜贸然听从外界建议。"
+  },
+  {
+    "id": 6,
+    "name_zh": "恋人",
+    "name_en": "The Lovers",
+    "image": "assets/cards/major_arcana/06_lovers.jpg",
+    "visual_description": "以伊甸园为背景，亚当与夏娃分别站在两侧。夏娃身后是知识之树与蛇，亚当身后是生命之树与火焰，上方是天使 Raphael。两人之间有山，土地肥沃，画面充满纯真、欲望、选择与连接。",
+    "summary_meaning": "象征爱情、结合、选择、价值观、关系中的一致性，以及身心灵的协调。",
+    "upright_meaning": "代表关系甜蜜、罗曼蒂克爱情、长期稳定、价值观契合、合作与联结，也可能表示面临重要但真诚的选择。",
+    "reversed_meaning": "代表爱情受挫、背信、不稳定、关系期待不一致、错误决定或无法持续的联盟。"
+  },
+  {
+    "id": 7,
+    "name_zh": "战车",
+    "name_en": "The Chariot",
+    "image": "assets/cards/major_arcana/07_chariot.jpg",
+    "visual_description": "战士驾着由黑白狮身人面兽拉动的战车，身后有四根柱子支撑蓝色车篷，头戴八角星冠，手持矛形权杖，车前有翅膀图腾，身后是城市。整张牌充满行动、推进与意志控制的力量。",
+    "summary_meaning": "象征意志力、控制、推进、胜利、独立与从选择走向行动的阶段。",
+    "upright_meaning": "代表勇往直前、胜利、掌控节奏、野心、斗志与独立，表示事情有机会被推进，依靠的是专注和意志。",
+    "reversed_meaning": "代表失败、鲁莽、争执、失控、危险驾驶、旅行延迟、斗志减弱，或因为方向未对齐而推进困难。"
+  },
+  {
+    "id": 8,
+    "name_zh": "力量",
+    "name_en": "Strength",
+    "image": "assets/cards/major_arcana/08_strength.jpg",
+    "visual_description": "一位女子温柔地驯服狮子，头上与腰间都佩戴花环，画面没有粗暴的征服，反而呈现安定、柔和而强大的控制力。",
+    "summary_meaning": "象征内在力量、耐心、勇气、自控与柔中带刚的稳定能量。",
+    "upright_meaning": "代表外柔内刚、信心、坚强、斗志、全力以赴，以及用温和但坚定的方式平息冲突、恢复健康或维持关系热度。",
+    "reversed_meaning": "代表软弱、怀疑、自大、滥用力量、缺乏耐性，或在爱情与健康上显得不够稳定。"
+  },
+  {
+    "id": 9,
+    "name_zh": "隐士",
+    "name_en": "The Hermit",
+    "image": "assets/cards/major_arcana/09_hermit.jpg",
+    "visual_description": "隐士站在雪山之巅，身披斗篷，手持提灯，灯中有六角星，另一手握着长杖，整张牌安静、克制、带着独自寻求真理的气息。",
+    "summary_meaning": "象征智慧、独处、反思、寻找真理，也暗示主动退一步去看清自己。",
+    "upright_meaning": "代表智慧、冷静、深思熟虑、独处内省、向长者求教，适合整理思路、抽离喧闹、寻找更深层答案。",
+    "reversed_meaning": "代表失误、孤独、过度封闭、固执、缺乏交流、对关系或他人产生怀疑，也可能是把自己困在过度思考里。"
+  },
+  {
+    "id": 10,
+    "name_zh": "命运之轮",
+    "name_en": "Wheel of Fortune",
+    "image": "assets/cards/major_arcana/10_wheel_of_fortune.jpg",
+    "visual_description": "中央是巨大的命运之轮，轮边有象征变化与轮回的存在，四周是四圣兽与四元素的象征。整张牌像宇宙机制在转动，暗示命运和时机的流变。",
+    "summary_meaning": "象征轮回、变化、机运、转折与新循环，提醒一切都在流动。",
+    "upright_meaning": "代表好的转变、意外惊喜、好运、机会到来、钟情恋情与幸运婚姻，也暗示要把握当下转机。",
+    "reversed_meaning": "代表不幸转变、时机未到、犹豫、失败、未抓住机会，或事情进入短暂但不稳定的循环。"
+  },
+  {
+    "id": 11,
+    "name_zh": "正义",
+    "name_en": "Justice",
+    "image": "assets/cards/major_arcana/11_justice.jpg",
+    "visual_description": "正义女神坐得端正，左手持天秤，右手握直立的宝剑，身穿红袍，背景是对称的帷幕。整张牌传达出清晰、平衡与裁断。",
+    "summary_meaning": "象征公平、平衡、责任、判断与面对后果。",
+    "upright_meaning": "代表公平、合理处理、协调、中立、裁决、诚实与光明正大的态度，提醒回到事实与标准本身。",
+    "reversed_meaning": "代表不公、纷争、契约问题、错误判断、诉讼、偏见、失衡或逃避应承担的责任。"
+  },
+  {
+    "id": 12,
+    "name_zh": "倒吊人",
+    "name_en": "The Hanged Man",
+    "image": "assets/cards/major_arcana/12_hanged_man.jpg",
+    "visual_description": "倒吊人被挂在 T 字形树上，头下脚上，头部有金色光环，衣着红蓝相间，整张牌并不痛苦，反而显得平静而带有顿悟感。",
+    "summary_meaning": "象征暂停、等待、换角度、牺牲与重新理解世界。",
+    "upright_meaning": "代表接受考验、等待、平静抉择、换一个角度看问题，也可能对应一种有意义的奉献或暂时不推进感情。",
+    "reversed_meaning": "代表挣扎、钻牛角尖、不愿付出、缺乏耐性、不敢做自己，或无回报的牺牲与停滞。"
+  },
+  {
+    "id": 13,
+    "name_zh": "死神",
+    "name_en": "Death",
+    "image": "assets/cards/major_arcana/13_death.jpg",
+    "visual_description": "骷髅骑士骑着白马，手持黑旗，旗上有白玫瑰，脚下有不同身份的人物，远方有河流、船只与朝阳。画面并非单纯黑暗，更像旧事物结束与新阶段来临。",
+    "summary_meaning": "象征结束、转化、放下与新生，是旧阶段谢幕后的腾挪空间。",
+    "upright_meaning": "代表结束、停止、分手、离婚、失败、疾病、意外或旧习终止，也意味着必须让某个阶段彻底结束。",
+    "reversed_meaning": "代表起死回生、康复、重新开始、低迷结束、新开端，也可能表示迟迟不肯放手、沉溺过去。"
+  },
+  {
+    "id": 14,
+    "name_zh": "节制",
+    "name_en": "Temperance",
+    "image": "assets/cards/major_arcana/14_temperance.jpg",
+    "visual_description": "一位天使双手倒水于两个圣杯之间，背有双翼，周围有水、花草和温和的光。整张牌呈现调和、过渡与平衡。",
+    "summary_meaning": "象征调和、适度、节奏感、自我节制与把对立元素整合成稳定状态。",
+    "upright_meaning": "代表交往顺利、平衡、调整、交换条件、平凡中的幸福、心境平和、爱意加深，是一种慢慢整合后的稳定感。",
+    "reversed_meaning": "代表消耗、浪费、失衡、缺乏调整能力、没默契、工作不稳定、合作不顺，或节奏完全乱掉。"
+  },
+  {
+    "id": 15,
+    "name_zh": "魔鬼",
+    "name_en": "The Devil",
+    "image": "assets/cards/major_arcana/15_devil.jpg",
+    "visual_description": "魔鬼拥有蝙蝠翅膀、羊角与羊腿，头顶倒五角星，手中火炬向下，两侧人物被锁链束缚，背景阴暗。整张牌充满诱惑、依赖与失控感。",
+    "summary_meaning": "象征诱惑、束缚、沉溺、成瘾、物质执迷与自愿承担的枷锁。",
+    "upright_meaning": "代表堕落、诱惑、成瘾、病魔、恶意、荒诞生活、贪心势利，或一段让人难以抽离的关系。",
+    "reversed_meaning": "代表摆脱束缚、恢复自由、拒绝诱惑、病痛缓解、斩断情缘，也可能是混乱中试图脱身。"
+  },
+  {
+    "id": 16,
+    "name_zh": "高塔",
+    "name_en": "The Tower",
+    "image": "assets/cards/major_arcana/16_tower.jpg",
+    "visual_description": "闪电击中高塔，皇冠被震落，塔中人物坠下，黑色背景中火花四散，画面剧烈而突兀，像一场无法回避的崩塌。",
+    "summary_meaning": "象征剧变、崩塌、真相暴露、破坏与强制性的觉醒，也暗示破后重建。",
+    "upright_meaning": "代表致命打击、剧变、急症、纷争、幻灭、突然分离、信念崩溃或旧结构被强行打破。",
+    "reversed_meaning": "代表困境、背水一战、爱情危机、压抑事态、骄傲的代价，或虽然未彻底崩塌，但危机已经存在。"
+  },
+  {
+    "id": 17,
+    "name_zh": "星星",
+    "name_en": "The Star",
+    "image": "assets/cards/major_arcana/17_star.jpg",
+    "visual_description": "夜空中有一颗大星与多颗小星，女子跪地倒水，水流向土地与池中。画面宁静、清澈，像在黑暗之后出现的希望之光。",
+    "summary_meaning": "象征希望、修复、愿景、信任与重新相信未来。",
+    "upright_meaning": "代表愿望达成、前途光明、希望、创造力、生活变好、美好恋情、理想对象，也暗示修复正在发生。",
+    "reversed_meaning": "代表挫折、事与愿违、不乐观、缺乏想象力、异想天开、秘密恋情、希望感减弱。"
+  },
+  {
+    "id": 18,
+    "name_zh": "月亮",
+    "name_en": "The Moon",
+    "image": "assets/cards/major_arcana/18_moon.jpg",
+    "visual_description": "月亮高悬，带着人脸，夜色中有犬吠与朦胧景象，画面充满不确定、潜意识和暗潮般的情绪感。",
+    "summary_meaning": "象征潜意识、迷惑、情绪波动、暧昧、想象与不安，也可能带来灵感。",
+    "upright_meaning": "代表迷惑、不安、联想、灵感、暧昧、潜意识活跃和需要辨认真相的阶段，事情尚不完全清晰。",
+    "reversed_meaning": "代表迷雾开始散开、部分真相显现、不安减弱、情绪回稳，但也可能是更深层的自欺和误判。"
+  },
+  {
+    "id": 19,
+    "name_zh": "太阳",
+    "name_en": "The Sun",
+    "image": "assets/cards/major_arcana/19_sun.jpg",
+    "visual_description": "金色太阳放射出光芒，下方有四朵向日葵，一名头戴花冠、插着红羽毛的孩童举着旗帜，充满自然、明朗与生命的喜悦。",
+    "summary_meaning": "象征生命力、光明、自由、繁荣和纯自然的快乐，是最明亮、最有希望的牌之一。",
+    "upright_meaning": "代表精力充沛、自由快乐、工作顺利、飞黄腾达、学业成功、爱情愉悦、婚姻幸福，以及一种被阳光照亮的状态。",
+    "reversed_meaning": "代表活动力减弱、消沉、生活不安、人际关系不好、失恋、离婚或事情发展不够乐观，但通常不是彻底失去希望。"
+  },
+  {
+    "id": 20,
+    "name_zh": "审判",
+    "name_en": "Judgement",
+    "image": "assets/cards/major_arcana/20_judgement.jpg",
+    "visual_description": "拥有翅膀的天使在云端吹着金色的喇叭，下方的人们在召唤中抬头，像在接受最终审视，也像在迎来精神上的觉醒与重生。",
+    "summary_meaning": "象征觉醒、最终审视、重生、复苏和回应召唤，意味着旧包袱被卸下，新的阶段被开启。",
+    "upright_meaning": "代表危机解除、恢复健康、事业上升、好消息、事态明朗、重见光明、复苏的爱与审慎决断。",
+    "reversed_meaning": "代表坏消息、失败、延期、无法决定、复苏缓慢、计划不被接受、恋恋不舍的爱，或重新开始后又回到原状。"
+  },
+  {
+    "id": 21,
+    "name_zh": "世界",
+    "name_en": "The World",
+    "image": "assets/cards/major_arcana/21_world.jpg",
+    "visual_description": "月桂树围成的圆环中包围着爱与美的女神，周围有象征火、地、风、水四元素的动物。整张牌呈现出整体协调、联结与动态平衡的圆满状态。",
+    "summary_meaning": "象征终极幸福、整体完成、人与世界的联结，以及通过积极投入与服务而获得的圆满。",
+    "upright_meaning": "代表完成、成功、达成目标、毕生追求、达到标准、完美状态、快乐结束，也对应理想恋情与受人称羡的情侣。",
+    "reversed_meaning": "代表未完成、未获得预期成就、准备不足而失败、进展不顺、精神松弛、状态不佳、无法发挥整体优势，感情上也可能因不够成熟而受挫。"
+  }
+]

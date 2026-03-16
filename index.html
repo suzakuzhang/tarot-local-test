@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>塔罗本地测试版</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>塔罗本地测试版</h1>
+    <p class="subtitle">韦特大阿卡纳本地测试版</p>
+
+    <section class="panel">
+      <label for="questionType">问题类型</label>
+      <select id="questionType">
+        <option value="love">感情</option>
+        <option value="work">工作</option>
+        <option value="emotion">情绪</option>
+        <option value="growth">自我成长</option>
+      </select>
+
+      <label for="questionText">补充一句问题（可不填）</label>
+      <textarea id="questionText" rows="3" placeholder="比如：我最近适合主动推进这段关系吗？"></textarea>
+
+      <div class="button-row">
+        <button id="drawBtn">洗牌并抽牌</button>
+      </div>
+    </section>
+
+    <section class="panel result-panel">
+      <h2>抽牌结果</h2>
+
+      <div id="resultCard" class="result-card hidden">
+        <div class="card-visual" id="cardVisual">正在洗牌…</div>
+
+        <div class="result-text">
+          <p><strong>牌名：</strong><span id="cardName">-</span></p>
+          <p><strong>方向：</strong><span id="cardOrientation">-</span></p>
+          <p><strong>本次主调：</strong><span id="cardKeywords">-</span></p>
+          <p><strong>解读：</strong></p>
+          <div id="cardReading" class="reading-box">-</div>
+        </div>
+      </div>
+
+      <div id="emptyState" class="empty-state">
+        点击上方按钮，先抽一张牌。
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
