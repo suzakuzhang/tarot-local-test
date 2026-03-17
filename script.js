@@ -6,12 +6,14 @@ const questionTypeMap = {
   emotion: "情绪",
   growth: "自我成长"
 };
+
 const questionPlaceholderMap = {
   love: "比如：我现在该怎么改善这段关系的沟通？",
   work: "比如：我现在该怎么判断这个工作机会是否适合我？",
   emotion: "比如：我最近反复焦虑的核心原因是什么？",
   growth: "比如：我现在最需要调整的方向是什么？"
 };
+
 const drawBtn = document.getElementById("drawBtn");
 const cardVisual = document.getElementById("cardVisual");
 const emptyState = document.getElementById("emptyState");
@@ -41,18 +43,18 @@ function shuffleDeck(deck) {
   return shuffled;
 }
 
-function updateQuestionPlaceholder() {
-  const questionType = document.getElementById("questionType").value;
-  const questionText = document.getElementById("questionText");
-  questionText.placeholder =
-    questionPlaceholderMap[questionType] || "比如：我现在该注意什么？";
-}
-
 function drawFromDeck() {
   const deck = createDeck();
   const shuffledDeck = shuffleDeck(deck);
   const drawnCard = shuffledDeck[0];
   return { drawnCard, deck: shuffledDeck };
+}
+
+function updateQuestionPlaceholder() {
+  const questionType = document.getElementById("questionType").value;
+  const questionText = document.getElementById("questionText");
+  questionText.placeholder =
+    questionPlaceholderMap[questionType] || "比如：我现在该注意什么？";
 }
 
 function detectQuestionStyle(questionText, questionType) {
@@ -243,4 +245,3 @@ loadCardsData().catch(err => {
   console.error(err);
   document.getElementById("cardReading").textContent = "牌库加载失败：" + err.message;
 });
-
