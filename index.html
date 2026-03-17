@@ -3,12 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI 塔罗解读（测试版）</title>
+  <title>韦特大阿卡纳塔罗（测试版）</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="container">
-    <h1>AI 塔罗解读（测试版）</h1>
+    <h1 class="title-row">
+      韦特大阿卡纳塔罗（测试版）
+      <button id="titleHelpToggle" class="help-toggle" type="button" aria-label="什么是塔罗">?</button>
+    </h1>
+
+    <div id="titleHelpBox" class="help-box hidden">
+      <p><strong>什么是塔罗？</strong> 塔罗更像一种借助象征图像来整理问题与感受的工具。这里的解读偏向自我反思与情境提示，不是绝对预测。</p>
+    </div>
+
     <p class="subtitle">借助塔罗牌的象征图像，帮助你整理问题与感受。</p>
 
     <section class="panel">

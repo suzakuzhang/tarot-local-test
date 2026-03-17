@@ -167,7 +167,13 @@ button:disabled {
 
 /* --- 帮助按钮与帮助框 --- */
 
-.question-label-row,
+.title-row,
+.question-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 
 .question-label-row {
   margin-top: 12px;
@@ -175,10 +181,6 @@ button:disabled {
 
 .question-label-row label {
   margin: 0;
-}
-
-.orientation-row {
-  margin: 8px 0;
 }
 
 .help-toggle {
@@ -200,9 +202,6 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
-  /* 覆盖全局 button 样式 */
-  width: 22px;
   flex: 0 0 22px;
   box-shadow: none;
 }

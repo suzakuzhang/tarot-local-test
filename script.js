@@ -192,9 +192,18 @@ function startThinkingAnimation(card) {
     buildFixedMeaning(card) + "\n\n【结合你的问题的解读】\n正在生成解读…";
 }
 
+const titleHelpToggle = document.getElementById("titleHelpToggle");
+const titleHelpBox = document.getElementById("titleHelpBox");
+
 const preHelpToggle = document.getElementById("preHelpToggle");
 const preHelpBox = document.getElementById("preHelpBox");
 const questionTypeSelect = document.getElementById("questionType");
+
+if (titleHelpToggle && titleHelpBox) {
+  titleHelpToggle.addEventListener("click", () => {
+    titleHelpBox.classList.toggle("hidden");
+  });
+}
 
 if (preHelpToggle && preHelpBox) {
   preHelpToggle.addEventListener("click", () => {
