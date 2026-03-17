@@ -6,7 +6,12 @@ const questionTypeMap = {
   emotion: "情绪",
   growth: "自我成长"
 };
-
+const questionPlaceholderMap = {
+  love: "比如：我现在该怎么改善这段关系的沟通？",
+  work: "比如：我现在该怎么判断这个工作机会是否适合我？",
+  emotion: "比如：我最近反复焦虑的核心原因是什么？",
+  growth: "比如：我现在最需要调整的方向是什么？"
+};
 const drawBtn = document.getElementById("drawBtn");
 const cardVisual = document.getElementById("cardVisual");
 const emptyState = document.getElementById("emptyState");
@@ -34,6 +39,13 @@ function shuffleDeck(deck) {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
+}
+
+function updateQuestionPlaceholder() {
+  const questionType = document.getElementById("questionType").value;
+  const questionText = document.getElementById("questionText");
+  questionText.placeholder =
+    questionPlaceholderMap[questionType] || "比如：我现在该注意什么？";
 }
 
 function drawFromDeck() {
@@ -178,6 +190,20 @@ function startThinkingAnimation(card) {
     buildFixedMeaning(card) + "\n\n【结合你的问题的解读】\n正在生成解读…";
 }
 
+const preHelpToggle = document.getElementById("preHelpToggle");
+const preHelpBox = document.getElementById("preHelpBox");
+const questionTypeSelect = document.getElementById("questionType");
+
+if (preHelpToggle && preHelpBox) {
+  preHelpToggle.addEventListener("click", () => {
+    preHelpBox.classList.toggle("hidden");
+  });
+}
+
+if (questionTypeSelect) {
+  questionTypeSelect.addEventListener("change", updateQuestionPlaceholder);
+}
+
 drawBtn.addEventListener("click", async () => {
   const questionType = document.getElementById("questionType").value;
   const questionText = document.getElementById("questionText").value;
@@ -211,7 +237,10 @@ drawBtn.addEventListener("click", async () => {
   }, 1200);
 });
 
+updateQuestionPlaceholder();
+
 loadCardsData().catch(err => {
   console.error(err);
   document.getElementById("cardReading").textContent = "牌库加载失败：" + err.message;
 });
+

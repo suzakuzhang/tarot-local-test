@@ -221,3 +221,47 @@ button:disabled {
     word-break: break-word;
   }
 }
+.question-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.question-label-row label {
+  margin: 0;
+}
+
+.help-toggle {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #bbb;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.help-box {
+  margin: 8px 0 14px;
+  padding: 12px 14px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  background: #fafafa;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.help-box p {
+  margin: 0 0 8px;
+}
+
+.help-box p:last-child {
+  margin-bottom: 0;
+}
+
+.hidden {
+  display: none;
+}

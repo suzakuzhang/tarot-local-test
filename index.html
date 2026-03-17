@@ -12,16 +12,30 @@
     <p class="subtitle">韦特大阿卡纳本地测试版</p>
 
     <section class="panel">
-      <label for="questionType">问题类型</label>
-      <select id="questionType">
-        <option value="love">感情</option>
-        <option value="work">工作</option>
-        <option value="emotion">情绪</option>
-        <option value="growth">自我成长</option>
-      </select>
+    <label for="questionType">问题类型</label>
+<select id="questionType">
+  <option value="love">感情</option>
+  <option value="work">工作</option>
+  <option value="emotion">情绪</option>
+  <option value="growth">自我成长</option>
+</select>
 
-      <label for="questionText">补充一句问题（可不填）</label>
-      <textarea id="questionText" rows="3" placeholder="比如：我最近适合主动推进这段关系吗？"></textarea>
+<div class="question-label-row">
+  <label for="questionText">补充一句问题（可不填）</label>
+  <button id="preHelpToggle" class="help-toggle" type="button">?</button>
+</div>
+
+<div id="preHelpBox" class="help-box hidden">
+  <p><strong>这是什么？</strong> 塔罗更像一种借助象征图像来整理问题的工具。这里的解读偏向自我反思和情境提示，不是绝对预测。</p>
+  <p><strong>怎么问会更有帮助？</strong> 比起直接问结果，更适合问一个具体、近期、可行动的问题，例如“我现在该注意什么？”“我可以怎么改善这段关系？”</p>
+  <p><strong>怎么看结果？</strong> 可以先看固定牌意，再看结合你问题的 AI 解读。把它当作帮助你理清思路的入口，而不是唯一答案。</p>
+</div>
+
+<textarea
+  id="questionText"
+  rows="3"
+  placeholder="比如：我现在该怎么改善这段关系的沟通？"
+></textarea>
 
       <div class="button-row">
         <button id="drawBtn">洗牌并抽牌</button>
