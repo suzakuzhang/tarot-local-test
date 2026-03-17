@@ -14,10 +14,26 @@ const questionPlaceholderMap = {
   growth: "比如：我现在最需要调整的方向是什么？"
 };
 
-const drawBtn = document.getElementById("drawBtn");
+const shuffleBtn = document.getElementById("shuffleBtn");
+const drawArea = document.getElementById("drawArea");
+const cardBackButtons = document.querySelectorAll(".card-back");
 const cardVisual = document.getElementById("cardVisual");
 const emptyState = document.getElementById("emptyState");
 const resultCard = document.getElementById("resultCard");
+const orientationHelpToggle = document.getElementById("orientationHelpToggle");
+const orientationHelpBox = document.getElementById("orientationHelpBox");
+
+if (!shuffleBtn || !drawArea || !cardVisual || !emptyState || !resultCard) {
+  console.warn("页面关键节点未找到：", {
+    shuffleBtn,
+    drawArea,
+    cardVisual,
+    emptyState,
+    resultCard
+  });
+} else {
+
+let pendingDrawCard = null;
 
 async function loadCardsData() {
   const resp = await fetch("./cards_data.json");
@@ -211,46 +227,79 @@ if (preHelpToggle && preHelpBox) {
   });
 }
 
+if (orientationHelpToggle && orientationHelpBox) {
+  orientationHelpToggle.addEventListener("click", () => {
+    orientationHelpBox.classList.toggle("hidden");
+  });
+}
+
 if (questionTypeSelect) {
   questionTypeSelect.addEventListener("change", updateQuestionPlaceholder);
 }
 
-drawBtn.addEventListener("click", async () => {
-  const questionType = document.getElementById("questionType").value;
-  const questionText = document.getElementById("questionText").value;
-
+shuffleBtn.addEventListener("click", () => {
   if (!majorArcana.length) {
-    document.getElementById("cardReading").textContent = "牌库尚未加载完成，请稍后重试。";
+    emptyState.classList.remove("hidden");
+    emptyState.textContent = "牌库尚未加载完成，请刷新页面后重试。";
     return;
   }
 
-  drawBtn.disabled = true;
-  drawBtn.textContent = "洗牌中…";
+  pendingDrawCard = drawFromDeck().drawnCard;
 
-  startShuffleAnimation();
+  resultCard.classList.add("hidden");
+  emptyState.classList.add("hidden");
+  drawArea.classList.remove("hidden");
+  document.getElementById("cardName").textContent = "—";
+  document.getElementById("cardOrientation").textContent = "—";
+  document.getElementById("cardKeywords").textContent = "—";
+  document.getElementById("cardReading").textContent = "牌阵正在重新整理，请从三张牌中选择一张。";
+});
 
-  const { drawnCard } = drawFromDeck();
+cardBackButtons.forEach(btn => {
+  btn.addEventListener("click", async () => {
+    if (!pendingDrawCard) return;
 
-  setTimeout(async () => {
-    try {
-      drawBtn.textContent = "解读中…";
-      startThinkingAnimation(drawnCard);
+    cardBackButtons.forEach(button => {
+      button.disabled = true;
+    });
 
-      const aiReading = await fetchAIReading(drawnCard, questionType, questionText);
-      updateUI(drawnCard, aiReading);
-    } catch (err) {
-      document.getElementById("cardReading").textContent =
-        buildFixedMeaning(drawnCard) + "\n\n【结合你的问题的解读】\n解读生成失败：" + err.message;
-    } finally {
-      drawBtn.disabled = false;
-      drawBtn.textContent = "洗牌并抽牌";
-    }
-  }, 1200);
+    const questionType = document.getElementById("questionType").value;
+    const questionText = document.getElementById("questionText").value;
+
+    shuffleBtn.disabled = true;
+    shuffleBtn.textContent = "解读中…";
+
+    drawArea.classList.add("hidden");
+    resultCard.classList.remove("hidden");
+
+    startShuffleAnimation();
+
+    setTimeout(async () => {
+      try {
+        startThinkingAnimation(pendingDrawCard);
+        const aiReading = await fetchAIReading(pendingDrawCard, questionType, questionText);
+        updateUI(pendingDrawCard, aiReading);
+      } catch (err) {
+        document.getElementById("cardReading").textContent =
+          buildFixedMeaning(pendingDrawCard) + "\n\n【结合你的问题的解读】\n解读生成失败：" + err.message;
+      } finally {
+        pendingDrawCard = null;
+        shuffleBtn.disabled = false;
+        shuffleBtn.textContent = "开始洗牌";
+
+        cardBackButtons.forEach(button => {
+          button.disabled = false;
+        });
+      }
+    }, 800);
+  });
 });
 
 updateQuestionPlaceholder();
 
 loadCardsData().catch(err => {
   console.error(err);
-  document.getElementById("cardReading").textContent = "牌库加载失败：" + err.message;
+  emptyState.classList.remove("hidden");
+  emptyState.textContent = "牌库加载失败：" + err.message;
 });
+}
