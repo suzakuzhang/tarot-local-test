@@ -235,13 +235,22 @@ button:disabled {
 .help-toggle {
   width: 22px;
   height: 22px;
+  min-width: 22px;
+  min-height: 22px;
   border: 1px solid #bbb;
   border-radius: 50%;
-  background: transparent;
+  background: #fff;
+  color: #222;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 600;
+  font-family: Arial, sans-serif;
   line-height: 1;
+  text-align: center;
   padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .help-box {
