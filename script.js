@@ -181,7 +181,7 @@ function startShuffleAnimation() {
   emptyState.classList.add("hidden");
 
   cardVisual.classList.add("shuffling");
-  cardVisual.innerHTML = "正在洗牌…";
+  cardVisual.innerHTML = "正在翻牌…";
 
   document.getElementById("cardName").textContent = "—";
   document.getElementById("cardOrientation").textContent = "—";
