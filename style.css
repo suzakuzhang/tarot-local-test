@@ -183,3 +183,41 @@ button:disabled {
     height: 280px;
   }
 }
+@media (max-width: 768px) {
+  .result-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .card-visual {
+    max-height: 320px;
+    min-height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .card-visual img {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+  }
+
+  .result-text {
+    padding-top: 4px;
+  }
+
+  .result-text p {
+    margin: 8px 0;
+  }
+
+  .reading-box {
+    max-height: none;
+    overflow: visible;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
