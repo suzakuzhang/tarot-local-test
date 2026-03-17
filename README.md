@@ -27,6 +27,8 @@
 - 按问题类型提供不同提问引导
 - 动态 placeholder 提示
 - 面向新手的轻量提问说明
+- 模拟“洗牌 → 选牌 → 解读”的塔罗交互流程
+- 三张牌背选择，增强抽牌的参与感与仪式感
 - 在线部署，可直接访问测试
 
 ## Interaction Design
@@ -35,7 +37,7 @@
 
 在当前版本中：
 
-- 用户通过“洗牌并抽牌”进入解读流程
+- 用户通过洗牌并抽牌进入解读流程
 - 系统在抽取卡牌时同时决定正位 / 逆位
 - 正位与逆位不是简单的“好 / 坏”二分，而是代表同一张牌在不同方向下的不同状态侧重
 - 整个流程被设计成“洗牌 → 抽牌 → 固定牌意 → AI 解读”的结构，以保留一定的仪式感与参与感
@@ -63,7 +65,7 @@
 
 1. 用户选择问题类型  
 2. 用户可补充一句问题  
-3. 前端随机抽取一张大阿卡纳，并随机决定正位 / 逆位  
+3. 洗牌并且抽取一张大阿卡纳，系统随机决定正位 / 逆位  
 4. 页面先展示固定牌意  
 5. 后端根据：
    - 卡牌本身
@@ -96,3 +98,21 @@ tarot-local-test/
 ├── cards_data.json        # 22 张大阿卡纳牌义数据
 ├── requirements.txt       # Python 依赖
 └── assets/                # 牌面图片资源
+## Author
+
+Created by **Shumin Zhang**.
+
+This project is shared for portfolio, research, and learning purposes.
+
+If you reference, reuse, or build on this project, please provide clear attribution to the original repository and author.
+
+## Usage Note
+
+This project is intended as an experimental interactive prototype.  
+It is designed to explore the combination of:
+
+- structured tarot knowledge
+- LLM-generated interpretation
+- symbolic interaction design
+
+It should be understood as a reflective tool rather than a source of absolute prediction.

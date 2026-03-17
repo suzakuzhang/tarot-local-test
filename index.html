@@ -45,7 +45,22 @@
       ></textarea>
 
       <div class="button-row">
-        <button id="drawBtn">洗牌并抽牌</button>
+        <button id="shuffleBtn">开始洗牌</button>
+      </div>
+
+      <div id="drawArea" class="draw-area hidden">
+        <p class="draw-tip">请选择一张牌</p>
+        <div class="card-choices">
+          <button class="card-back" data-choice="0" type="button">
+            <img src="assets/tarotback.png" alt="牌背" />
+          </button>
+          <button class="card-back" data-choice="1" type="button">
+            <img src="assets/tarotback.png" alt="牌背" />
+          </button>
+          <button class="card-back" data-choice="2" type="button">
+            <img src="assets/tarotback.png" alt="牌背" />
+          </button>
+        </div>
       </div>
     </section>
 
@@ -57,7 +72,18 @@
 
         <div class="result-text">
           <p><strong>牌名：</strong><span id="cardName">-</span></p>
-          <p><strong>方向：</strong><span id="cardOrientation">-</span></p>
+
+          <div class="orientation-row">
+            <p><strong>方向：</strong><span id="cardOrientation">-</span></p>
+            <button id="orientationHelpToggle" class="help-toggle" type="button" aria-label="正位与逆位说明">?</button>
+          </div>
+
+          <div id="orientationHelpBox" class="help-box hidden">
+            <p><strong>正位 / 逆位是什么意思？</strong></p>
+            <p>正位和逆位并不代表“好”或“坏”，而是不同的状态与角度。</p>
+            <p>正位通常更直接、外显；逆位可能代表内在、延迟、受阻或转化中的状态。</p>
+          </div>
+
           <p><strong>本次主调：</strong><span id="cardKeywords">-</span></p>
           <p><strong>解读：</strong></p>
           <div id="cardReading" class="reading-box">-</div>
@@ -68,6 +94,19 @@
         点击上方按钮，先抽一张牌。
       </div>
     </section>
+    <footer class="footer-note">
+  <p>
+    Made by <strong>Shumin Zhang</strong> ·
+    <a
+      href="https://github.com/suzakuzhang/tarot-local-test"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      GitHub
+    </a>
+  </p>
+  <p>如果你喜欢这个项目，欢迎在 GitHub 上点亮star。</p>
+</footer>
   </main>
 
   <script src="script.js"></script>
