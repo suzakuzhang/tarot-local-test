@@ -46,6 +46,10 @@ def get_type_hint(question_type):
 def index():
     return send_from_directory(BASE_DIR, "index.html")
 
+@app.route("/healthz")
+def healthz():
+    return "ok", 200
+
 @app.route("/<path:path>")
 def static_proxy(path):
     target = BASE_DIR / path
