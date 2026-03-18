@@ -2,13 +2,20 @@ let majorArcana = [];
 
 const COPY = {
   subtitle: "借助塔罗的象征图像，陪你把心里那点说不清的东西理一理。",
-  inputLabel: "写一句你现在最想问的（可不填）",
+  inputLabel: "写一句你现在最想问的",
 
   placeholders: {
     "感情": "你想知道的是对方怎么想，还是你自己还想不想继续？",
     "工作": "你真正舍不得放开的，是这份工作，还是那点稳定感？",
     "情绪": "你是累了，还是只是一直没停下来承认自己很累？",
     "自我成长": "是不知道怎么开始，还是迟迟不肯开始？"
+  },
+
+  mobilePlaceholders: {
+    "感情": "你更想看清关系里的什么？",
+    "工作": "你现在最想确认哪件工作事？",
+    "情绪": "你现在最难说出口的感受是？",
+    "自我成长": "你现在最卡住的成长点是？"
   },
 
   helpSections: {
@@ -57,7 +64,11 @@ const cardVisual = document.getElementById("cardVisual");
 const emptyState = document.getElementById("emptyState");
 const resultCard = document.getElementById("resultCard");
 const orientationHelpToggle = document.getElementById("orientationHelpToggle");
+const orientationHelpToggleDesktop = document.getElementById("orientationHelpToggleDesktop");
 const orientationHelpBox = document.getElementById("orientationHelpBox");
+const cardNameDesktop = document.getElementById("cardNameDesktop");
+const cardOrientationDesktop = document.getElementById("cardOrientationDesktop");
+const cardKeywordsDesktop = document.getElementById("cardKeywordsDesktop");
 const subtitleEl = document.getElementById("subtitle") || document.querySelector(".subtitle");
 const questionInputLabelEl = document.getElementById("question-input-label");
 const questionInput = document.getElementById("question-input") || document.getElementById("questionText");
@@ -66,6 +77,9 @@ const helpContent = document.getElementById("help-content") || document.getEleme
 const preDrawTipEl = document.getElementById("pre-draw-tip");
 const chooseCardTipEl = document.getElementById("choose-card-tip");
 const resultLeadEl = document.getElementById("result-lead");
+
+const MAX_DRAWS_PER_SESSION = 10;
+const DRAW_COUNT_KEY = "tarot_draw_count";
 
 if (!shuffleBtn || !drawArea || !cardVisual || !emptyState || !resultCard) {
   console.warn("页面关键节点未找到：", {
@@ -78,6 +92,25 @@ if (!shuffleBtn || !drawArea || !cardVisual || !emptyState || !resultCard) {
 } else {
 
 let pendingDrawCard = null;
+
+function getDrawCount() {
+  const raw = sessionStorage.getItem(DRAW_COUNT_KEY);
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+function setDrawCount(nextCount) {
+  sessionStorage.setItem(DRAW_COUNT_KEY, String(nextCount));
+}
+
+function lockDrawForSession() {
+  shuffleBtn.disabled = true;
+  shuffleBtn.textContent = "今日封盘";
+  drawArea.classList.add("hidden");
+  if (chooseCardTipEl) chooseCardTipEl.hidden = true;
+  emptyState.classList.remove("hidden");
+  emptyState.textContent = "你已在本次打开中抽牌 10 次。古话说‘卜不过三’，今天先到这里吧。";
+}
 
 async function loadCardsData() {
   const resp = await fetch("./cards_data.json");
@@ -113,9 +146,12 @@ function drawFromDeck() {
 function updateQuestionPlaceholder() {
   const questionType = document.getElementById("questionType").value;
   const mappedType = questionTypeMap[questionType] || questionType;
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
   if (questionInput) {
     questionInput.placeholder =
-      COPY.placeholders[mappedType] || questionPlaceholderMap[questionType] || "比如：我现在该注意什么？";
+      (isMobile ? COPY.mobilePlaceholders[mappedType] : COPY.placeholders[mappedType]) ||
+      questionPlaceholderMap[questionType] ||
+      "比如：我现在该注意什么？";
   }
 }
 
@@ -139,8 +175,8 @@ function detectQuestionStyle(questionText, questionType) {
   return "general";
 }
 
-async function fetchAIReading(card, questionType, questionText) {
-  const questionStyle = detectQuestionStyle(questionText, questionType);
+async function fetchAIReading(card, questionType, questionText, questionStyle) {
+  const style = questionStyle || detectQuestionStyle(questionText, questionType);
 
   const resp = await fetch("/api/reading", {
     method: "POST",
@@ -152,7 +188,7 @@ async function fetchAIReading(card, questionType, questionText) {
       orientation: card.orientation,
       question_type: questionTypeMap[questionType] || questionType,
       question_text: questionText || "",
-      question_style: questionStyle
+      question_style: style
     })
   });
 
@@ -222,6 +258,9 @@ function updateUI(card, aiReading) {
   document.getElementById("cardName").textContent = card.name_zh;
   document.getElementById("cardOrientation").textContent = orientationLabel;
   document.getElementById("cardKeywords").textContent = makeBriefLine(card);
+  if (cardNameDesktop) cardNameDesktop.textContent = card.name_zh;
+  if (cardOrientationDesktop) cardOrientationDesktop.textContent = orientationLabel;
+  if (cardKeywordsDesktop) cardKeywordsDesktop.textContent = makeBriefLine(card);
 
   const llmMeaning = `【结合你的问题的解读】
 核心提醒：${aiReading.core}
@@ -253,6 +292,9 @@ function startShuffleAnimation() {
   document.getElementById("cardName").textContent = "—";
   document.getElementById("cardOrientation").textContent = "—";
   document.getElementById("cardKeywords").textContent = "—";
+  if (cardNameDesktop) cardNameDesktop.textContent = "—";
+  if (cardOrientationDesktop) cardOrientationDesktop.textContent = "—";
+  if (cardKeywordsDesktop) cardKeywordsDesktop.textContent = "—";
   document.getElementById("cardReading").textContent = "牌阵正在重新整理，请稍候片刻。";
 }
 
@@ -271,6 +313,9 @@ function startThinkingAnimation(card) {
   document.getElementById("cardOrientation").textContent =
     card.orientation === "upright" ? "正位" : "逆位";
   document.getElementById("cardKeywords").textContent = makeBriefLine(card);
+  if (cardNameDesktop) cardNameDesktop.textContent = card.name_zh;
+  if (cardOrientationDesktop) cardOrientationDesktop.textContent = card.orientation === "upright" ? "正位" : "逆位";
+  if (cardKeywordsDesktop) cardKeywordsDesktop.textContent = makeBriefLine(card);
   document.getElementById("cardReading").textContent =
     buildFixedMeaning(card) + "\n\n【结合你的问题的解读】\n正在生成解读…";
 }
@@ -298,11 +343,25 @@ if (orientationHelpToggle && orientationHelpBox) {
   });
 }
 
+if (orientationHelpToggleDesktop && orientationHelpBox) {
+  orientationHelpToggleDesktop.addEventListener("click", () => {
+    orientationHelpBox.classList.toggle("hidden");
+  });
+}
+
 if (questionTypeSelect) {
   questionTypeSelect.addEventListener("change", updateQuestionPlaceholder);
 }
 
+window.addEventListener("resize", updateQuestionPlaceholder);
+
 shuffleBtn.addEventListener("click", () => {
+  const currentCount = getDrawCount();
+  if (currentCount >= MAX_DRAWS_PER_SESSION) {
+    lockDrawForSession();
+    return;
+  }
+
   if (!majorArcana.length) {
     emptyState.classList.remove("hidden");
     emptyState.textContent = "牌库尚未加载完成，请刷新页面后重试。";
@@ -332,6 +391,7 @@ cardBackButtons.forEach(btn => {
 
     const questionType = document.getElementById("questionType").value;
     const questionText = questionInput ? questionInput.value : "";
+    const questionStyle = detectQuestionStyle(questionText, questionType);
 
     shuffleBtn.disabled = true;
     shuffleBtn.textContent = "解读中…";
@@ -346,8 +406,14 @@ cardBackButtons.forEach(btn => {
     setTimeout(async () => {
       try {
         startThinkingAnimation(pendingDrawCard);
-        const aiReading = await fetchAIReading(pendingDrawCard, questionType, questionText);
+        const aiReading = await fetchAIReading(pendingDrawCard, questionType, questionText, questionStyle);
         updateUI(pendingDrawCard, aiReading);
+
+        const nextCount = getDrawCount() + 1;
+        setDrawCount(nextCount);
+        if (nextCount >= MAX_DRAWS_PER_SESSION) {
+          lockDrawForSession();
+        }
       } catch (err) {
         document.getElementById("cardReading").textContent =
           buildFixedMeaning(pendingDrawCard) + "\n\n【结合你的问题的解读】\n解读生成失败：" + err.message;
@@ -366,6 +432,10 @@ cardBackButtons.forEach(btn => {
 
 applyStaticCopy();
 updateQuestionPlaceholder();
+
+if (getDrawCount() >= MAX_DRAWS_PER_SESSION) {
+  lockDrawForSession();
+}
 
 loadCardsData().catch(err => {
   console.error(err);
