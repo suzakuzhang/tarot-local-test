@@ -82,15 +82,14 @@
 
           <p><strong>本次主调：</strong><span id="cardKeywords">-</span></p>
           <p><strong>解读：</strong></p>
-          <div id="readingProgress" class="reading-progress hidden" aria-live="polite">
-            <div class="reading-progress-head">
-              <span id="progressLabel">正在接引讯息</span>
-              <span id="progressPercent">0%</span>
+          <div id="loadingBox" class="loading-box hidden" aria-live="polite">
+            <div class="loading-state-wrap">
+              <span id="loadingState" class="loading-state">正在整理牌面的线索……</span>
             </div>
-            <div class="reading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-              <div id="readingProgressFill" class="reading-progress-fill"></div>
+            <div class="loading-progress">
+              <div class="loading-progress-bar"></div>
             </div>
-            <p id="readingFact" class="reading-fact">正在展开牌阵符号…</p>
+            <p id="loadingFact" class="loading-fact">正在展开牌阵符号…</p>
           </div>
           <div id="cardReading" class="reading-box">-</div>
         </div>

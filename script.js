@@ -66,31 +66,147 @@ const helpContent = document.getElementById("help-content") || document.getEleme
 const preDrawTipEl = document.getElementById("pre-draw-tip");
 const chooseCardTipEl = document.getElementById("choose-card-tip");
 const resultLeadEl = document.getElementById("result-lead");
-const readingProgressEl = document.getElementById("readingProgress");
-const readingProgressFillEl = document.getElementById("readingProgressFill");
-const progressPercentEl = document.getElementById("progressPercent");
-const readingFactEl = document.getElementById("readingFact");
+const loadingBoxEl = document.getElementById("loadingBox");
+const loadingStateEl = document.getElementById("loadingState");
+const loadingFactEl = document.getElementById("loadingFact");
 
 const MAX_DRAWS_PER_SESSION = 10;
 const DRAW_COUNT_KEY = "tarot_draw_count";
-const LOADING_FACTS = [
-  "大阿卡那常指阶段课题。",
-  "小阿卡那更贴近日常。",
-  "火与风偏主动推进。",
-  "水与土偏承接沉淀。",
-  "塔罗更像照见模式。",
-  "先看状态，再看建议。",
-  "同一张牌会因问题变焦。",
-  "图像常比关键词先说话。"
+const LOADING_STATES = [
+  "正在整理牌面的线索……",
+  "正在把你的问题放回这张牌里……",
+  "正在生成解读……"
 ];
-const REVERSED_LOADING_FACTS = [
-  "逆位不等于坏结果。",
-  "逆位常见受阻或过度。",
-  "逆位也可能是能量内收。",
-  "先找卡点，再谈推进。",
-  "先调节奏，再做决定。",
-  "逆位常提醒边界失衡。"
-];
+const LOADING_FACTS = {
+  common: [
+    "大阿卡纳更像阶段性的课题，不只是结果判断。",
+    "塔罗不一定替你决定，但常会先照见卡点。",
+    "同一张牌，放进不同问题里，重点会不一样。",
+    "有些牌说的不是答案，而是你怎么看问题。",
+    "很多时候，牌先照见的是你提问的方式。"
+  ],
+
+  reversed: [
+    "逆位不等于坏，更像一种变化或转折。",
+    "有些逆位不是否定，而是提醒你换个角度看。",
+    "逆位常提示：过度、不足，或还没走顺。",
+    "有些力量不是消失了，只是暂时卡住了。",
+    "逆位更像线索，不必急着把它判成吉或凶。"
+  ],
+
+  byCard: {
+    "愚者": [
+      "愚者更像出发，不只是莽撞。",
+      "这张牌和未知有关，也和轻盈有关。",
+      "有时候，真正的新开始本来就没有完整地图。"
+    ],
+    "魔术师": [
+      "魔术师常和主动性、调动资源有关。",
+      "这张牌提醒的是：你手里未必什么都没有。",
+      "魔术师更像把已有的东西真正用起来。"
+    ],
+    "女祭司": [
+      "女祭司常和未说出口的直觉有关。",
+      "有些答案不是没出现，只是还没被说成语言。",
+      "这张牌往往偏内在，不急着往外推动。"
+    ],
+    "女皇": [
+      "女皇不只讲丰盛，也讲滋养和承接。",
+      "这张牌常和生长、照料、感受力有关。",
+      "有些东西先被好好承接，才会慢慢长出来。"
+    ],
+    "皇帝": [
+      "皇帝常和秩序、边界、掌控感有关。",
+      "这张牌不只讲权威，也讲结构。",
+      "有时候问题不在力量不够，而在边界没立稳。"
+    ],
+    "教皇": [
+      "教皇常和规则、传统、共同认可有关。",
+      "这张牌有时会提醒你：你参考的是谁的标准。",
+      "它不只讲指导，也讲已有秩序的影响。"
+    ],
+    "恋人": [
+      "恋人不只讲感情，也讲选择与一致。",
+      "这张牌常会碰到价值观和真正想要什么。",
+      "有些选择，看起来像二选一，其实是在问你更站哪边。"
+    ],
+    "战车": [
+      "战车和推进有关，也和控制方向有关。",
+      "这张牌不只是快，更重要的是不乱。",
+      "有时候，真正的推进来自把分散的力收回来。"
+    ],
+    "力量": [
+      "力量强调的通常不是压制，而是驾驭。",
+      "这张牌和勇气有关，也和自制有关。",
+      "有些真正的力量，看起来并不张扬。"
+    ],
+    "隐者": [
+      "隐者不只是孤独，也和审慎有关。",
+      "有些清楚，是拉开距离后才看见的。",
+      "这张牌常常比起行动，更先强调看清。"
+    ],
+    "命运之轮": [
+      "命运之轮常在提醒：变化已经开始。",
+      "这张牌不只讲运气，也讲时机。",
+      "有些局面不是你推不动，而是它本来就在转。"
+    ],
+    "正义": [
+      "正义常和判断、对等、后果有关。",
+      "这张牌会把情绪拉回更清楚的衡量里。",
+      "有些问题最后要看的，不只是感受，还有是否合乎你心里的尺。"
+    ],
+    "倒吊人": [
+      "倒吊人常和暂停、换角度、暂不推进有关。",
+      "这张牌未必是在阻拦你，也可能是在逼你换个看法。",
+      "有时候，停住不是浪费，而是为了看见之前看不到的东西。"
+    ],
+    "死神": [
+      "死神多数时候指结束与转换，不是真的死亡。",
+      "这张牌常常在说：有些阶段该过去了。",
+      "不是所有失去都只是失去，有些也是腾位置。"
+    ],
+    "节制": [
+      "节制和调和、适应、慢慢放回平衡有关。",
+      "这张牌不急，重点常常在慢慢调准。",
+      "有些问题不是立刻解决，而是先让失衡别继续扩大。"
+    ],
+    "恶魔": [
+      "恶魔常和执念、束缚、上瘾式循环有关。",
+      "这张牌有时会照见：你是怎么被某种东西牵住的。",
+      "它不只是黑暗，也常和欲望、依附、难以抽身有关。"
+    ],
+    "高塔": [
+      "高塔常和突发、崩塌、旧结构被打断有关。",
+      "这张牌不是只讲坏事，也讲假的稳定撑不住了。",
+      "有些震动不是为了摧毁，而是为了让你看见裂缝。"
+    ],
+    "星星": [
+      "星星常和希望、修复、重新相信有关。",
+      "这张牌比起热烈，更像一种安静的恢复。",
+      "有些力量不是马上把你拉起来，而是先让你愿意继续。"
+    ],
+    "月亮": [
+      "月亮常和不安、投射、模糊感有关。",
+      "这张牌提醒的未必是危险，而是看不清时很容易自己补完。",
+      "有些害怕来自外面，也有些来自心里还没说清的东西。"
+    ],
+    "太阳": [
+      "太阳常和明朗、生命力、被看见有关。",
+      "这张牌的重点往往是坦率，而不是复杂。",
+      "有些事一旦被照亮，就不必再靠猜。"
+    ],
+    "审判": [
+      "审判常和觉醒、召唤、重新面对有关。",
+      "这张牌有时像一个提醒：该回头看清旧问题了。",
+      "它不只是评判，也常和一次真正的回应有关。"
+    ],
+    "世界": [
+      "世界常和完成、整合、阶段圆满有关。",
+      "这张牌不只讲结束，也讲终于能把很多东西放回整体里。",
+      "有些完成不是没有遗憾，而是终于走到了能收束的位置。"
+    ]
+  }
+};
 
 if (!shuffleBtn || !drawArea || !cardVisual || !emptyState || !resultCard) {
   console.warn("页面关键节点未找到：", {
@@ -103,30 +219,29 @@ if (!shuffleBtn || !drawArea || !cardVisual || !emptyState || !resultCard) {
 } else {
 
 let pendingDrawCard = null;
-let progressTimer = null;
 let factTimer = null;
-let progressHideTimer = null;
-let progressShowTimer = null;
-let currentProgress = 0;
-let loadingFactsPool = [...LOADING_FACTS];
+let loadingStateTimer1 = null;
+let loadingStateTimer2 = null;
+let loadingFactsPool = [...LOADING_FACTS.common];
 
 function clearProgressTimers() {
-  if (progressTimer) {
-    clearInterval(progressTimer);
-    progressTimer = null;
-  }
-  if (factTimer) {
-    clearInterval(factTimer);
-    factTimer = null;
-  }
-  if (progressHideTimer) {
-    clearTimeout(progressHideTimer);
-    progressHideTimer = null;
-  }
-  if (progressShowTimer) {
-    clearTimeout(progressShowTimer);
-    progressShowTimer = null;
-  }
+  stopLoadingFactsRotation();
+  stopLoadingStateRotation();
+}
+
+function showLoadingBox() {
+  if (loadingBoxEl) loadingBoxEl.classList.remove("hidden");
+}
+
+function hideLoadingBox() {
+  if (loadingBoxEl) loadingBoxEl.classList.add("hidden");
+}
+
+function resetLoadingUI() {
+  clearProgressTimers();
+  hideLoadingBox();
+  if (loadingStateEl) loadingStateEl.textContent = "";
+  if (loadingFactEl) loadingFactEl.textContent = "";
 }
 
 function toMicroFact(text) {
@@ -142,93 +257,85 @@ function toMicroFact(text) {
   return cleaned;
 }
 
-function setProgressValue(value) {
-  const bounded = Math.max(0, Math.min(100, Math.floor(value)));
-  currentProgress = bounded;
-  if (readingProgressFillEl) {
-    readingProgressFillEl.style.width = `${bounded}%`;
+function shuffleArray(arr) {
+  const copied = [...arr];
+  for (let i = copied.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copied[i], copied[j]] = [copied[j], copied[i]];
   }
-  const track = readingProgressEl ? readingProgressEl.querySelector(".reading-progress-track") : null;
-  if (track) {
-    track.setAttribute("aria-valuenow", String(bounded));
-  }
-  if (progressPercentEl) {
-    progressPercentEl.textContent = `${bounded}%`;
-  }
+  return copied;
 }
 
-function rotateLoadingFact() {
-  if (!readingFactEl || !loadingFactsPool.length) return;
-  const nextFact = loadingFactsPool[Math.floor(Math.random() * loadingFactsPool.length)];
-  readingFactEl.textContent = nextFact;
+function pickRange(arr, minCount, maxCount) {
+  if (!arr || !arr.length) return [];
+  const maxAllowed = Math.min(maxCount, arr.length);
+  const minAllowed = Math.min(minCount, maxAllowed);
+  const count = minAllowed + Math.floor(Math.random() * (maxAllowed - minAllowed + 1));
+  return shuffleArray(arr).slice(0, count);
 }
 
-async function fetchLoadingFacts(orientation) {
-  const normalized = orientation === "reversed" ? "reversed" : "upright";
-  try {
-    const resp = await fetch(`/api/loading-facts?orientation=${normalized}&limit=18`);
-    if (!resp.ok) return;
-    const data = await resp.json();
-    if (Array.isArray(data.facts) && data.facts.length) {
-      const microFacts = data.facts
-        .map(toMicroFact)
-        .filter(Boolean)
-        .slice(0, 20);
-      if (microFacts.length) {
-        const fallback = orientation === "reversed" ? REVERSED_LOADING_FACTS : LOADING_FACTS;
-        loadingFactsPool = [...new Set([...microFacts, ...fallback])];
-      }
-      rotateLoadingFact();
-    }
-  } catch (_err) {
-    // Keep local fallback facts if backend facts are unavailable.
-  }
-}
+function startLoadingFactsRotation(facts) {
+  if (!loadingFactEl || !facts || !facts.length) return;
 
-function startReadingProgress(orientation) {
-  if (!readingProgressEl) return;
+  let index = 0;
+  loadingFactEl.textContent = facts[index];
 
-  clearProgressTimers();
-  loadingFactsPool = orientation === "reversed" ? [...REVERSED_LOADING_FACTS] : [...LOADING_FACTS];
-  setProgressValue(6 + Math.floor(Math.random() * 8));
-  progressShowTimer = setTimeout(() => {
-    if (!readingProgressEl) return;
-    readingProgressEl.classList.remove("hidden");
-    rotateLoadingFact();
-  }, 380);
-  fetchLoadingFacts(orientation);
-
-  progressTimer = setInterval(() => {
-    if (currentProgress >= 92) return;
-    const delta = currentProgress < 40 ? 6 : currentProgress < 70 ? 3 : 1;
-    setProgressValue(currentProgress + delta);
-  }, 340);
+  stopLoadingFactsRotation();
 
   factTimer = setInterval(() => {
-    rotateLoadingFact();
+    index = (index + 1) % facts.length;
+    loadingFactEl.textContent = facts[index];
+  }, 2600);
+}
+
+function stopLoadingFactsRotation() {
+  if (factTimer) {
+    clearInterval(factTimer);
+    factTimer = null;
+  }
+}
+
+function startLoadingStateRotation() {
+  if (!loadingStateEl) return;
+
+  loadingStateEl.textContent = LOADING_STATES[0];
+
+  stopLoadingStateRotation();
+
+  loadingStateTimer1 = setTimeout(() => {
+    if (!loadingStateEl) return;
+    loadingStateEl.textContent = LOADING_STATES[1];
+  }, 1800);
+
+  loadingStateTimer2 = setTimeout(() => {
+    if (!loadingStateEl) return;
+    loadingStateEl.textContent = "正在生成这次解读……";
   }, 3800);
 }
 
-function finishReadingProgress() {
-  if (!readingProgressEl) return;
-
-  clearProgressTimers();
-  setProgressValue(100);
-  if (readingFactEl) {
-    readingFactEl.textContent = "讯息已落位，正在显现最终解读…";
+function stopLoadingStateRotation() {
+  if (loadingStateTimer1) {
+    clearTimeout(loadingStateTimer1);
+    loadingStateTimer1 = null;
   }
-  progressHideTimer = setTimeout(() => {
-    if (readingProgressEl) {
-      readingProgressEl.classList.add("hidden");
-    }
-  }, 450);
+  if (loadingStateTimer2) {
+    clearTimeout(loadingStateTimer2);
+    loadingStateTimer2 = null;
+  }
 }
 
-function failReadingProgress() {
-  clearProgressTimers();
-  if (readingProgressEl) {
-    readingProgressEl.classList.add("hidden");
+function pickLoadingFacts(card) {
+  const cardName = card && card.name_zh ? String(card.name_zh).trim() : "";
+  const cardFacts = LOADING_FACTS.byCard[cardName] || [];
+
+  if (card && card.orientation === "reversed") {
+    const reversedFacts = pickRange(LOADING_FACTS.reversed, 1, 2);
+    const commonFact = pickRange(LOADING_FACTS.common, 1, 1);
+    return shuffleArray([...cardFacts, ...reversedFacts, ...commonFact]).slice(0, 4);
   }
+
+  const commonFacts = pickRange(LOADING_FACTS.common, 1, 2);
+  return shuffleArray([...cardFacts, ...commonFacts]).slice(0, 4);
 }
 
 function getDrawCount() {
@@ -415,7 +522,7 @@ function updateUI(card, aiReading) {
 }
 
 function startShuffleAnimation() {
-  failReadingProgress();
+  resetLoadingUI();
   resultCard.classList.remove("hidden");
   emptyState.classList.add("hidden");
 
@@ -429,7 +536,6 @@ function startShuffleAnimation() {
 }
 
 function startThinkingAnimation(card) {
-  startReadingProgress(card.orientation);
   cardVisual.classList.remove("shuffling");
   const rotateStyle = card.orientation === "reversed" ? "transform: rotate(180deg);" : "";
   cardVisual.innerHTML = `
@@ -446,6 +552,8 @@ function startThinkingAnimation(card) {
   document.getElementById("cardKeywords").textContent = makeBriefLine(card);
   document.getElementById("cardReading").textContent =
     buildFixedMeaning(card) + "\n\n【结合你的问题的解读】\n正在生成解读…";
+
+  showLoadingBox();
 }
 
 const questionTypeSelect = document.getElementById("questionType");
@@ -489,6 +597,7 @@ shuffleBtn.addEventListener("click", () => {
   }
 
   pendingDrawCard = drawFromDeck().drawnCard;
+  resetLoadingUI();
 
   resultCard.classList.add("hidden");
   emptyState.classList.add("hidden");
@@ -524,9 +633,20 @@ cardBackButtons.forEach(btn => {
 
     setTimeout(async () => {
       try {
+        loadingFactsPool = pickLoadingFacts(pendingDrawCard)
+          .map(toMicroFact)
+          .filter(Boolean);
+        loadingFactsPool = [...new Set(loadingFactsPool)];
+        if (!loadingFactsPool.length) {
+          loadingFactsPool = [...LOADING_FACTS.common].map(toMicroFact).filter(Boolean);
+        }
+
         startThinkingAnimation(pendingDrawCard);
+        startLoadingStateRotation();
+        startLoadingFactsRotation(loadingFactsPool);
+
         const aiReading = await fetchAIReading(pendingDrawCard, questionType, questionText);
-        finishReadingProgress();
+        resetLoadingUI();
         updateUI(pendingDrawCard, aiReading);
 
         const nextCount = getDrawCount() + 1;
@@ -535,7 +655,7 @@ cardBackButtons.forEach(btn => {
           lockDrawForSession();
         }
       } catch (err) {
-        failReadingProgress();
+        resetLoadingUI();
         document.getElementById("cardReading").textContent =
           buildFixedMeaning(pendingDrawCard) + "\n\n【结合你的问题的解读】\n解读生成失败：" + err.message;
       } finally {
@@ -553,6 +673,7 @@ cardBackButtons.forEach(btn => {
 
 applyStaticCopy();
 updateQuestionPlaceholder();
+resetLoadingUI();
 
 if (getDrawCount() >= MAX_DRAWS_PER_SESSION) {
   lockDrawForSession();
