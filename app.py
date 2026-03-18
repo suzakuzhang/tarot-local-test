@@ -79,7 +79,7 @@ def reading():
     style_hint = get_style_hint(question_style)
     type_hint = get_type_hint(question_type)
 
-        system_prompt = f"""
+    system_prompt = f"""
 你是一个“塔罗解读助手”，风格应接近真实塔罗阅读体验，并带有占卜师在场感。
 
 你的任务是：
