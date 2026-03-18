@@ -2,7 +2,7 @@ let majorArcana = [];
 
 const COPY = {
   subtitle: "借助塔罗的象征图像，陪你把心里那点说不清的东西理一理。",
-  inputLabel: "写一句你现在最想问的（可不填）",
+  inputLabel: "写一句你现在最想问的",
 
   placeholders: {
     "感情": "你想知道的是对方怎么想，还是你自己还想不想继续？",
@@ -400,21 +400,21 @@ function updateQuestionPlaceholder() {
 function detectQuestionStyle(questionText, questionType) {
   const text = (questionText || "").trim();
 
-  if (!text) return "general";
+  if (!text) return "点破流";
 
   if (/怎么看|为什么|感觉|不安|怪怪的|该如何理解|我是不是|我为什么/.test(text)) {
-    return "intuitive";
+    return "感受流";
   }
 
   if (/接下来|发展|之后|过程|阶段|走向|会怎么|未来会/.test(text)) {
-    return "story";
+    return "剧情流";
   }
 
   if (/该不该|要不要|怎么办|怎么做|问题核心|调整什么|适不适合|值不值得/.test(text)) {
-    return "analytical";
+    return "拆解流";
   }
 
-  return "general";
+  return "点破流";
 }
 
 async function fetchAIReading(card, questionType, questionText) {
@@ -501,10 +501,10 @@ function updateUI(card, aiReading) {
   document.getElementById("cardOrientation").textContent = orientationLabel;
   document.getElementById("cardKeywords").textContent = makeBriefLine(card);
 
-  const llmMeaning = `【结合你的问题的解读】
+  const llmMeaning = `【这张牌照见了什么】
 核心提醒：${aiReading.core}
 
-结合你的问题：${aiReading.context}
+放回你的问题里：${aiReading.context}
 
 宇宙想对你说：${aiReading.advice}`;
 
@@ -551,7 +551,7 @@ function startThinkingAnimation(card) {
     card.orientation === "upright" ? "正位" : "逆位";
   document.getElementById("cardKeywords").textContent = makeBriefLine(card);
   document.getElementById("cardReading").textContent =
-    buildFixedMeaning(card) + "\n\n【结合你的问题的解读】\n正在生成解读…";
+    buildFixedMeaning(card) + "\n\n【这张牌照见了什么】\n正在生成解读…";
 
   showLoadingBox();
 }
@@ -657,7 +657,7 @@ cardBackButtons.forEach(btn => {
       } catch (err) {
         resetLoadingUI();
         document.getElementById("cardReading").textContent =
-          buildFixedMeaning(pendingDrawCard) + "\n\n【结合你的问题的解读】\n解读生成失败：" + err.message;
+          buildFixedMeaning(pendingDrawCard) + "\n\n【这张牌照见了什么】\n解读生成失败：" + err.message;
       } finally {
         pendingDrawCard = null;
         shuffleBtn.disabled = false;

@@ -60,14 +60,64 @@ AUTHOR_STYLE_HINT = """
 1. 像在对一个具体的人做近距离、冷静、克制的观察。
 2. 不满足于描述表面情绪，要优先指出表象之下真正起作用的机制。
 3. 多写双层状态与反差，例如：明明已经动摇，却还在维持；表面平静，底下失衡；像是在犹豫，反而更像在拖延承认。
-4. 允许一点锋利的判断，但锋利来自点破与看穿，不来自攻击、羞辱或恐吓。
-5. 优先写细小裂缝、压抑、拉扯、留有余地、防御与失衡，不要直接贴情绪标签。
-6. 保持留白，多用“更像是在……”“未必是……反而更像……”这类表达，不要把一切解释死。
-7. 语言可以有叙述感，但不要写成完整剧情，不要堆砌修辞，不要为了文学感牺牲清晰度。
-8. core 先写状态，context 再扣问题，advice 最后只给一个轻推式的小动作。
-9. 不要空泛鸡汤，不要使用“相信自己”“一切都会好起来”之类通用鼓励。
-10. 最终效果应像：你看起来在经历一件事，但这张牌更像在指出，真正困住你的其实是另一件事。
+4. 除了写状态，还要写“话里没说出来的那层东西”：嘴上否认、表面从容、实则失衡；看似不在意，底下却已经被碰到。
+5. 优先描写机制翻转：表面上像在处理 A，真正起作用的却是 B。
+6. 多写“留有余地”“没有彻底交出去”“还在暗中维持控制”这类状态，不把人写成完全被动。
+7. 允许带一点半真半假的锋利感，像轻轻点破，而不是直接宣判。
+8. 可以写误解、错位、迁怒、防备、嘴硬、拖延承认，但不要写成戏剧化争执。
+9. 不急着贴情绪标签，更关注：人是怎么藏、怎么撑、怎么转移、怎么装作没被碰到的。
+10. 段落收束时可使用短而有判断力的句式，如“不是……而是……”“未必是……反而更像……”“表面……底下却……”。
+11. 保持留白，不把一切解释死；允许“更像是在……”这类双层表达。
+12. 语言可以有叙述感，但不要写成完整剧情，不要堆砌修辞，不要为了文学感牺牲清晰度。
+13. core 先写状态，context 再扣问题，advice 最后只给一个轻推式的小动作。
+14. 不要空泛鸡汤，不要使用“相信自己”“一切都会好起来”之类通用鼓励。
+15. 最终效果应像：你看起来在经历一件事，但这张牌更像在指出，真正困住你的其实是另一件事。
 """
+
+FEW_SHOT_EXAMPLES = [
+    {
+        "question_type": "工作",
+        "card_name": "星星",
+        "orientation": "reversed",
+        "theme": "希望松动",
+        "output": "这张牌先照见的，未必是你完全没有方向，反而更像是你对原本相信的那条路开始松了手。你表面上还在冷静衡量，底下却已经把那点信任压得很薄，所以真正拽住你的，不只是现实压力，而是你暂时不愿承认：自己其实没有之前那么相信了。先别逼自己看很远。把那个最想做、又最容易被你怀疑的念头拆成今天能落地的一小步，先让它重新回到手里。"
+    },
+    {
+        "question_type": "感情",
+        "card_name": "恋人",
+        "orientation": "upright",
+        "theme": "关系变近但不敢认",
+        "output": "你看起来像是在猜对方的态度，实际上更像是在回避自己已经开始在意这件事。这张牌未必是在催你立刻确认关系，反而更像在提醒你：有些靠近已经发生了，只是你还在给自己留余地，不肯太早承认这份在意已经超过了普通。现在更适合你做的，不是追问答案，而是先分清楚：你到底在等对方的回应，还是在等自己不再嘴硬。"
+    },
+    {
+        "question_type": "情绪",
+        "card_name": "月亮",
+        "orientation": "upright",
+        "theme": "反复想太多",
+        "output": "这张牌先指出的，不只是情绪起伏，而是你已经太习惯在看不清的时候自己把空白补满。你表面上是在分析，底下却有很多没有说清的担心先一步长成了判断，所以真正让你累的，未必只是事情本身，而是你一直在替未知添重量。暂时别急着得出结论。先把最近最反复冒出来的那种担心写下来，看它到底是现实的线索，还是你心里还没说清的那层雾。"
+    },
+    {
+        "question_type": "自我成长",
+        "card_name": "倒吊人",
+        "orientation": "upright",
+        "theme": "拖延开始",
+        "output": "你看起来像是在等一个更合适的时机，实际上更像是在拖延承认：这件事早就该动了。这张牌不是在说你做不到，而是在提醒你，你一直把再等等看用得太顺手，于是那一点本来就不多的行动意愿，也被你自己慢慢耗散了。不用一下子做很多。先做一件小到不能再推的事，把开始从想法里拖回现实。"
+    },
+    {
+        "question_type": "工作",
+        "card_name": "皇帝",
+        "orientation": "upright",
+        "theme": "明明很想稳但快撑不住",
+        "output": "表面上你更像是在讲秩序、讲责任、讲应该怎么做，底下却已经有一部分力快撑不住了。这张牌未必是在鼓励你继续硬扛，反而更像在提醒你：真正的问题不是你不够负责，而是你把维持局面这件事做得太久，久到快要分不清这是能力，还是负担。现在更适合你的，不是继续把每件事都接住，而是先划出一条边界，看清哪些真的是你该扛的，哪些只是你习惯了不放手。"
+    },
+    {
+        "question_type": "感情",
+        "card_name": "星星",
+        "orientation": "reversed",
+        "theme": "看似放下，实际没放",
+        "output": "你嘴上可能已经说得很轻了，像是这件事也没什么大不了，但这张牌更像在说：真正没放下的，不是那个人本身，而是你曾经认真相信过的那种可能。表面上像是在往前走，底下却还有一小块没有真正松开，所以你不是走不动，只是每走一步都还在回头确认，自己当初到底是不是看错了。暂时别急着逼自己彻底放下。先承认那点失望还在，再看你要不要继续把它留在原地。"
+    }
+]
 
 
 def _load_doc_text(path: pathlib.Path) -> str:
@@ -159,12 +209,12 @@ def find_card_data(card_name):
 
 def get_style_hint(question_style):
     style_hint_map = {
-        "intuitive": "请先从牌面第一感觉、画面气氛和直觉感受切入，不急着下结论，先说这张牌给人的心理与能量印象。",
-        "story": "请把这张牌读成一个小故事：先说当前处境，再说它可能提示的转折和下一步，让解读有过程感。",
-        "analytical": "请更聚焦地指出问题核心、当前症结和最值得调整的一点，语言可以更清晰直接，但不要生硬。",
-        "general": "请用平衡自然的方式解读，兼顾牌面象征、现实处境与下一步建议。"
+        "感受流": "请采用贴身感知型：从第一感觉、气氛、身体反应与细微情绪张力切入。先写现在是什么感觉，再扣回问题。少做硬逻辑拆解，不急着下结论。",
+        "剧情流": "请采用暗流叙事型：把当前处境读成正在发生的过程，明确现在在哪一步、下一步可能往哪里滑去。强调转折、误判与趋势，不虚构具体剧情。",
+        "拆解流": "请采用核心拆解型：直接指出关键机制与真正卡点，排除枝节，强调因果与执行动作。少写氛围，提升信息密度与判断力。",
+        "点破流": "请采用反差洞察型：优先识别表面态度与真实动机的错位。多用“看起来像……其实更像……”，抓住最有张力的一处反差并点破。"
     }
-    return style_hint_map.get(question_style, style_hint_map["general"])
+    return style_hint_map.get(question_style, style_hint_map["点破流"])
 
 def get_type_hint(question_type):
     type_hint_map = {
@@ -203,12 +253,49 @@ def get_focus_hint(question_type, orientation):
 
 def get_voice_intensity(question_style):
     intensity_map = {
-        "intuitive": "文风可以更贴近第一感觉、气氛和隐约的心理波动，语言轻一点、柔一点。",
-        "story": "文风可以更强一点，允许更明显的叙述感、阶段感与张力，但不要写成完整剧情。",
-        "analytical": "保留作者风格，但句子收一点，减少过多修辞，突出点破感与问题核心。",
-        "general": "保持作者风格，但控制密度，避免过满，确保清晰可读。"
+        "感受流": "句子可以更轻、更近，优先细节感知与微妙变化，保留留白。",
+        "剧情流": "句子要有阶段推进感和转折张力，但避免冗长叙事。",
+        "拆解流": "句子更短更准，直接收束到关键机制与执行动作。",
+        "点破流": "语气清醒克制、略带锋利，重点放在表里反差与防御机制的点破。"
     }
-    return intensity_map.get(question_style, intensity_map["general"])
+    return intensity_map.get(question_style, intensity_map["点破流"])
+
+
+def build_few_shot_section(question_type, card_name, orientation):
+    if not FEW_SHOT_EXAMPLES:
+        return ""
+
+    exact = [
+        item for item in FEW_SHOT_EXAMPLES
+        if item["question_type"] == question_type
+        and item["card_name"] == card_name
+        and item["orientation"] == orientation
+    ]
+
+    same_type = [
+        item for item in FEW_SHOT_EXAMPLES
+        if item["question_type"] == question_type and item not in exact
+    ]
+
+    picked = []
+    if exact:
+        picked.append(exact[0])
+    if same_type:
+        picked.append(same_type[0])
+
+    if not picked:
+        picked = FEW_SHOT_EXAMPLES[:2]
+
+    blocks = []
+    for idx, item in enumerate(picked, start=1):
+        orient_label = "正位" if item["orientation"] == "upright" else "逆位"
+        blocks.append(
+            f"示例{idx}\n"
+            f"场景：{item['question_type']} / {item['card_name']}{orient_label} / {item['theme']}\n"
+            f"示例输出：{item['output']}"
+        )
+
+    return "\n\n".join(blocks)
 
 
 def strip_leading_labels(text):
@@ -297,7 +384,7 @@ def reading():
     orientation = data.get("orientation", "")
     question_type = data.get("question_type", "")
     question_text = data.get("question_text", "")
-    question_style = data.get("question_style", "general")
+    question_style = data.get("question_style", "点破流")
 
     orientation_label = "正位" if orientation == "upright" else "逆位"
 
@@ -310,6 +397,7 @@ def reading():
     focus_hint = get_focus_hint(question_type, orientation)
     voice_intensity = get_voice_intensity(question_style)
     effective_question = question_text.strip() if question_text and question_text.strip() else get_default_question(question_type)
+    few_shot_section = build_few_shot_section(question_type, card_data["name_zh"], orientation)
 
     system_prompt = f"""
 你是一个有明确作者风格的塔罗解读者。你的语言不是通用安慰，也不是牌义说明书，而像是在对一个具体的人做一次近距离、克制、带张力的点破。
@@ -382,8 +470,11 @@ JSON 结构固定为：
 6. 可以有作者风格、叙述感和一点锋利，但不能写成完整小说片段。
 7. 多使用“更像是在……”“未必是……反而更像……”“明明……却……”这类有留白和张力的表达。
 8. 不要写成牌义说明书，不要出现“这张牌代表……”这种过强的教程腔。
-9. 三段合起来控制在 160 到 260 字之间。
+9. 三段合起来控制在 220 到 380 字之间。
 10. advice 字段只写正文内容，不要以“建议：”“温和建议：”“一句建议：”等前缀开头。
+
+风格参考示例（只学习写法与刀法，不要复述或抄写句子内容）：
+{few_shot_section}
 """
 
     payload = {
