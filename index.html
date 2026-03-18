@@ -8,16 +8,8 @@
 </head>
 <body>
   <main class="container">
-    <h1 class="title-row">
-      韦特大阿卡纳塔罗（测试版）
-      <button id="titleHelpToggle" class="help-toggle" type="button" aria-label="什么是塔罗">?</button>
-    </h1>
-
-    <div id="titleHelpBox" class="help-box hidden">
-      <p><strong>什么是塔罗？</strong> 塔罗更像一种借助象征图像来整理问题与感受的工具。这里的解读偏向自我反思与情境提示，不是绝对预测。</p>
-    </div>
-
-    <p class="subtitle">借助塔罗牌的象征图像，帮助你整理问题与感受。</p>
+    <h1>韦特大阿卡纳塔罗（测试版）</h1>
+    <p id="subtitle" class="subtitle"></p>
 
     <section class="panel">
       <label for="questionType">问题类型</label>
@@ -28,21 +20,25 @@
         <option value="growth">自我成长</option>
       </select>
 
-      <div class="question-label-row">
-        <label for="questionText">补充一句问题（可不填）</label>
-        <button id="preHelpToggle" class="help-toggle" type="button" aria-label="如何提问">?</button>
+      <div class="question-block">
+        <div class="label-row">
+          <label id="question-input-label" for="question-input"></label>
+          <button id="help-toggle" class="help-toggle" type="button" aria-expanded="false">?</button>
+        </div>
+
+        <input
+          id="question-input"
+          type="text"
+          maxlength="120"
+          autocomplete="off"
+        />
+
+        <div id="help-content" class="help-content" hidden></div>
       </div>
 
-      <div id="preHelpBox" class="help-box hidden">
-        <p><strong>怎么问会更有帮助？</strong> 比起直接追问结果，更适合问一个具体、近期、可行动的问题，例如“我现在该注意什么？”或“我可以怎么改善这段关系？”</p>
-        <p><strong>为什么不要反复问同一个问题？</strong> 同一个问题在情况没有变化前反复抽取，往往只会让信息变得更混乱。</p>
-      </div>
-
-      <textarea
-        id="questionText"
-        rows="3"
-        placeholder="比如：我现在该怎么改善这段关系的沟通？"
-      ></textarea>
+      <p id="pre-draw-tip" class="micro-copy"></p>
+      <p id="choose-card-tip" class="micro-copy" hidden></p>
+      <p id="result-lead" class="micro-copy" hidden></p>
 
       <div class="button-row">
         <button id="shuffleBtn">开始洗牌</button>

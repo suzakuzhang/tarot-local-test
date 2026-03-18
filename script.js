@@ -1,5 +1,41 @@
 let majorArcana = [];
 
+const COPY = {
+  subtitle: "借助塔罗的象征图像，陪你把心里那点说不清的东西理一理。",
+  inputLabel: "写一句你现在最想问的（可不填）",
+
+  placeholders: {
+    "感情": "你想知道的是对方怎么想，还是你自己还想不想继续？",
+    "工作": "你真正舍不得放开的，是这份工作，还是那点稳定感？",
+    "情绪": "你是累了，还是只是一直没停下来承认自己很累？",
+    "自我成长": "是不知道怎么开始，还是迟迟不肯开始？"
+  },
+
+  helpSections: {
+    ask: {
+      title: "怎么问会更有用？",
+      body: "牌最不擅长替你做决定，倒很擅长指出：你到底在意什么、回避什么、又为什么迟迟没动。问得越具体，回来的东西通常越有意思。"
+    },
+    repeat: {
+      title: "为什么别反复追问同一件事？",
+      body: "很多时候不是牌不清楚，是你心里那句没说出口的话还没准备好承认。同一个问题追太紧，反而容易把自己绕进去。"
+    },
+    orientation: {
+      title: "正位 / 逆位怎么理解？",
+      body: "别把正位当成“好”，逆位当成“坏”。逆位更像是在说：有些东西已经在动了，只是动得别扭、过头，或者还没走到明面上。"
+    }
+  },
+
+  preDrawTips: [
+    "扎人的通常不是牌，是你心里那句没说出口的话。",
+    "别急着找答案，先看看你到底在回避什么。",
+    "想好了就抽。直觉有时候比体面诚实。"
+  ],
+
+  chooseCardTip: "凭直觉选一张就好。",
+  resultLead: "有些东西，牌比你先看见了。"
+};
+
 const questionTypeMap = {
   love: "感情",
   work: "工作",
@@ -22,6 +58,14 @@ const emptyState = document.getElementById("emptyState");
 const resultCard = document.getElementById("resultCard");
 const orientationHelpToggle = document.getElementById("orientationHelpToggle");
 const orientationHelpBox = document.getElementById("orientationHelpBox");
+const subtitleEl = document.getElementById("subtitle") || document.querySelector(".subtitle");
+const questionInputLabelEl = document.getElementById("question-input-label");
+const questionInput = document.getElementById("question-input") || document.getElementById("questionText");
+const helpToggle = document.getElementById("help-toggle") || document.getElementById("preHelpToggle");
+const helpContent = document.getElementById("help-content") || document.getElementById("preHelpBox");
+const preDrawTipEl = document.getElementById("pre-draw-tip");
+const chooseCardTipEl = document.getElementById("choose-card-tip");
+const resultLeadEl = document.getElementById("result-lead");
 
 if (!shuffleBtn || !drawArea || !cardVisual || !emptyState || !resultCard) {
   console.warn("页面关键节点未找到：", {
@@ -68,9 +112,11 @@ function drawFromDeck() {
 
 function updateQuestionPlaceholder() {
   const questionType = document.getElementById("questionType").value;
-  const questionText = document.getElementById("questionText");
-  questionText.placeholder =
-    questionPlaceholderMap[questionType] || "比如：我现在该注意什么？";
+  const mappedType = questionTypeMap[questionType] || questionType;
+  if (questionInput) {
+    questionInput.placeholder =
+      COPY.placeholders[mappedType] || questionPlaceholderMap[questionType] || "比如：我现在该注意什么？";
+  }
 }
 
 function detectQuestionStyle(questionText, questionType) {
@@ -115,6 +161,27 @@ async function fetchAIReading(card, questionType, questionText) {
     throw new Error(data.detail || data.error || "API 请求失败");
   }
   return data;
+}
+
+function applyStaticCopy() {
+  if (subtitleEl) subtitleEl.textContent = COPY.subtitle;
+  if (questionInputLabelEl) questionInputLabelEl.textContent = COPY.inputLabel;
+
+  if (helpContent) {
+    helpContent.innerHTML = `
+      <p><strong>${COPY.helpSections.ask.title}</strong> ${COPY.helpSections.ask.body}</p>
+      <p><strong>${COPY.helpSections.repeat.title}</strong> ${COPY.helpSections.repeat.body}</p>
+      <p><strong>${COPY.helpSections.orientation.title}</strong> ${COPY.helpSections.orientation.body}</p>
+    `;
+  }
+
+  if (preDrawTipEl) {
+    const randomTip = COPY.preDrawTips[Math.floor(Math.random() * COPY.preDrawTips.length)];
+    preDrawTipEl.textContent = randomTip;
+  }
+
+  if (chooseCardTipEl) chooseCardTipEl.textContent = COPY.chooseCardTip;
+  if (resultLeadEl) resultLeadEl.textContent = COPY.resultLead;
 }
 
 function makeBriefLine(card) {
@@ -208,22 +275,20 @@ function startThinkingAnimation(card) {
     buildFixedMeaning(card) + "\n\n【结合你的问题的解读】\n正在生成解读…";
 }
 
-const titleHelpToggle = document.getElementById("titleHelpToggle");
-const titleHelpBox = document.getElementById("titleHelpBox");
-
-const preHelpToggle = document.getElementById("preHelpToggle");
-const preHelpBox = document.getElementById("preHelpBox");
 const questionTypeSelect = document.getElementById("questionType");
 
-if (titleHelpToggle && titleHelpBox) {
-  titleHelpToggle.addEventListener("click", () => {
-    titleHelpBox.classList.toggle("hidden");
-  });
-}
-
-if (preHelpToggle && preHelpBox) {
-  preHelpToggle.addEventListener("click", () => {
-    preHelpBox.classList.toggle("hidden");
+if (helpToggle && helpContent) {
+  helpToggle.addEventListener("click", () => {
+    const isHidden = helpContent.hasAttribute("hidden") || helpContent.classList.contains("hidden");
+    if (isHidden) {
+      helpContent.removeAttribute("hidden");
+      helpContent.classList.remove("hidden");
+      helpToggle.setAttribute("aria-expanded", "true");
+    } else {
+      helpContent.setAttribute("hidden", "");
+      helpContent.classList.add("hidden");
+      helpToggle.setAttribute("aria-expanded", "false");
+    }
   });
 }
 
@@ -249,6 +314,8 @@ shuffleBtn.addEventListener("click", () => {
   resultCard.classList.add("hidden");
   emptyState.classList.add("hidden");
   drawArea.classList.remove("hidden");
+  if (chooseCardTipEl) chooseCardTipEl.hidden = false;
+  if (resultLeadEl) resultLeadEl.hidden = true;
   document.getElementById("cardName").textContent = "—";
   document.getElementById("cardOrientation").textContent = "—";
   document.getElementById("cardKeywords").textContent = "—";
@@ -264,13 +331,15 @@ cardBackButtons.forEach(btn => {
     });
 
     const questionType = document.getElementById("questionType").value;
-    const questionText = document.getElementById("questionText").value;
+    const questionText = questionInput ? questionInput.value : "";
 
     shuffleBtn.disabled = true;
     shuffleBtn.textContent = "解读中…";
 
     drawArea.classList.add("hidden");
+    if (chooseCardTipEl) chooseCardTipEl.hidden = true;
     resultCard.classList.remove("hidden");
+    if (resultLeadEl) resultLeadEl.hidden = false;
 
     startShuffleAnimation();
 
@@ -295,6 +364,7 @@ cardBackButtons.forEach(btn => {
   });
 });
 
+applyStaticCopy();
 updateQuestionPlaceholder();
 
 loadCardsData().catch(err => {
