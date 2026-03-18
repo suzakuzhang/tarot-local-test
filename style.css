@@ -102,31 +102,9 @@ button:disabled {
   align-items: flex-start;
 }
 
-.card-column {
+.card-visual {
   width: 220px;
   min-width: 220px;
-}
-
-.desktop-card-meta {
-  display: block;
-  margin-bottom: 10px;
-  padding: 10px 12px;
-  background: #faf7f1;
-  border: 1px solid #eee4d4;
-  border-radius: 12px;
-}
-
-.desktop-card-meta p {
-  margin: 6px 0;
-}
-
-.mobile-meta {
-  display: none;
-}
-
-.card-visual {
-  width: 100%;
-  min-width: 100%;
   height: 360px;
   border-radius: 16px;
   background: linear-gradient(180deg, #efe6d6, #dbc8a9);
@@ -182,8 +160,6 @@ button:disabled {
   line-height: 1.75;
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 380px;
-  overflow: auto;
 }
 
 .empty-state {
@@ -320,19 +296,6 @@ button:disabled {
   .result-card {
     flex-direction: column;
     gap: 16px;
-  }
-
-  .card-column {
-    width: 100%;
-    min-width: 100%;
-  }
-
-  .desktop-card-meta {
-    display: none;
-  }
-
-  .mobile-meta {
-    display: block;
   }
 
   .card-visual {
