@@ -1,118 +1,141 @@
-# AI 塔罗解读（测试版）
+# 韦特大阿卡纳塔罗（测试版）
 
-一个结合**固定塔罗牌义**与**LLM 个性化解读**的在线 Web 原型，用于帮助用户整理问题、关系与感受。
+借助塔罗的象征图像，陪你把心里那点说不清的东西理一理。
 
-## Live Demo
+这是一个在线 Web 原型：
+以 22 张韦特大阿卡纳为基础，将固定牌意与生成式解读结合，探索一种更轻、更干净、也更有边界感的塔罗交互体验。
 
-[[在线体验](https://tarot-local-test.onrender.com)]
+## 在线体验
 
-## Project Overview
+Live Demo: https://tarot-local-test.onrender.com
 
-这个项目尝试把塔罗解读拆成两层：
+## 项目定位
 
-1. **固定牌意层**  
-   使用结构化 JSON 数据保存大阿卡纳牌义、视觉描述、正位 / 逆位解释，保证基础信息稳定。
+这个项目不把塔罗当成绝对预测工具，而是把它当成一种结构化反思方式：
 
-2. **生成式解读层**  
-   根据用户的问题类型与提问方式，调用大模型生成更贴近语境的解释，减少“只重复牌义”的机械输出。
+- 用固定牌意提供稳定锚点
+- 用生成式解读贴近当前问题语境
+- 用轻量交互降低进入门槛
 
-它并不是把塔罗当作“绝对预测”，而更像一个借助象征图像来帮助用户整理问题与感受的交互式工具。
+目标不是替用户做决定，而是帮助用户更清楚地看到：
 
-## Current Features
+- 我真正卡在哪里
+- 这件事里最值得留意的线索是什么
+- 下一步最值得尝试的一小步是什么
+
+## 当前版本功能
 
 - 22 张韦特大阿卡纳随机抽牌
 - 正位 / 逆位机制
-- 固定牌意展示
-- 结合用户问题的 AI 个性化解读
-- 按问题类型提供不同提问引导
-- 动态 placeholder 提示
-- 面向新手的轻量提问说明
-- 模拟“洗牌 → 选牌 → 解读”的塔罗交互流程
-- 三张牌背选择，增强抽牌的参与感与仪式感
-- 在线部署，可直接访问测试
+- 固定牌意展示（视觉、基础含义、正逆位含义）
+- 基于问题类型与补充问题的生成式解读
+- 动态 placeholder 与折叠式提问说明
+- 洗牌 -> 三选一抽牌 -> 解读的单路径交互
+- 等待层体验：
+  - 三阶段状态文案切换
+  - 呼吸式进度条
+  - 与当前牌相关的碎片知识轮播
+- 单会话抽牌上限（当前为 10 次）
+- Render 在线部署
 
-## Interaction Design
+## 交互流程
 
-这个项目不仅关注解读内容本身，也尝试在交互层面模拟更接近真实塔罗占卜的体验。
+1. 选择问题类型（感情 / 工作 / 情绪 / 自我成长）
+2. 可补充一句当前最想问的问题
+3. 点击开始洗牌
+4. 从三张牌背中选择一张
+5. 展示牌名、方向、主调与固定牌意
+6. 后端结合卡牌信息与问题语境生成解读
+7. 输出最终结果（固定牌意 + 语境化解读）
 
-在当前版本中：
+## 技术栈
 
-- 用户通过洗牌并抽牌进入解读流程
-- 系统在抽取卡牌时同时决定正位 / 逆位
-- 正位与逆位不是简单的“好 / 坏”二分，而是代表同一张牌在不同方向下的不同状态侧重
-- 整个流程被设计成“洗牌 → 抽牌 → 固定牌意 → AI 解读”的结构，以保留一定的仪式感与参与感
+- Backend: Python + Flask
+- Frontend: HTML + CSS + JavaScript
+- Data: JSON（结构化牌义）
+- LLM API: DeepSeek
+- Deployment: Render
 
-这里的随机化不只是技术实现，也是一种交互设计选择：它用程序方式模拟真实塔罗占卜中的不确定性与象征性体验。
-
-## Why This Project
-
-很多塔罗类网页产品要么过于“玄学化”，要么完全依赖大模型自由生成，容易出现：
-
-- 输出太空泛
-- 重复套话
-- 缺乏固定结构
-- 新手不知道怎么问
-
-这个项目的核心想法是：
-
-> 用**结构化牌义**保证基础稳定性，再用**LLM**补足与用户问题相关的个性化解释。
-
-这样既能保留塔罗的象征性与体验感，又能尽量减少纯生成式输出的不稳定。
-
-## How It Works
-
-当前的解读流程大致如下：
-
-1. 用户选择问题类型  
-2. 用户可补充一句问题  
-3. 洗牌并且抽取一张大阿卡纳，系统随机决定正位 / 逆位  
-4. 页面先展示固定牌意  
-5. 后端根据：
-   - 卡牌本身
-   - 正位 / 逆位
-   - 问题类型
-   - 提问风格  
-   生成更具体的解读结果  
-6. 最终在结果区展示：
-   - 牌面视觉描述
-   - 基本意思
-   - 正位 / 逆位含义
-   - 结合问题的 AI 解读
-
-## Tech Stack
-
-- **Backend**: Python, Flask
-- **Frontend**: HTML, CSS, JavaScript
-- **Data**: JSON
-- **LLM API**: DeepSeek API
-- **Deployment**: Render
-
-## Project Structure
+## 项目结构
 
 ```text
 tarot-local-test/
-├── app.py                 # Flask 后端，提供页面与 /api/reading 接口
-├── index.html             # 页面结构
-├── style.css              # 页面样式
-├── script.js              # 前端抽牌逻辑、交互逻辑、API 请求
-├── cards_data.json        # 22 张大阿卡纳牌义数据
-├── requirements.txt       # Python 依赖
-└── assets/                # 牌面图片资源
+├── app.py                # Flask 后端与 API
+├── index.html            # 页面结构
+├── style.css             # 页面样式
+├── script.js             # 前端交互、抽牌逻辑、等待层、API 请求
+├── cards_data.json       # 22 张大阿卡纳结构化牌义
+├── requirements.txt      # Python 依赖
+└── assets/               # 静态资源（牌面图片等）
+```
+
+## 本地运行
+
+环境要求：
+
+- Python 3.10+
+
+1) 安装依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+2) 配置环境变量
+
+```bash
+export DEEPSEEK_API_KEY=your_api_key_here
+```
+
+3) 启动服务（开发）
+
+```bash
+python app.py
+```
+
+或使用 gunicorn：
+
+```bash
+gunicorn app:app --bind 0.0.0.0:10000
+```
+
+## 部署说明
+
+当前默认部署在 Render。
+如果 Render 已配置自动部署 main 分支，推送后会自动触发新版本发布。
+
+## 使用边界与免责声明
+
+本项目用于反思与表达辅助，不构成医疗、法律、投资等专业建议。
+请勿将结果作为高风险现实决策的唯一依据。
+
+## 正在打磨
+
+- 作者风格稳定性（更短、更准、少模板感）
+- 结果区信息层次与可读性
+- 等待层文案与碎片知识质量
+- 更多真实使用反馈后的交互优化
+
+## 后续方向
+
+- 扩展到完整 78 张体系
+- 引入更明确的牌阵结构
+- 持续探索固定牌意与生成式解读的平衡
+
+## English Summary
+
+This project is a lightweight tarot web prototype based on the 22 Major Arcana cards.
+It combines:
+
+- structured card meanings (for consistency)
+- LLM-generated interpretation (for context relevance)
+- minimal interaction design (for lower cognitive load)
+
+The goal is not deterministic prediction, but reflective guidance.
+
 ## Author
 
-Created by **Shumin Zhang**.
+Created by Shumin Zhang.
 
-This project is shared for portfolio, research, and learning purposes.
-
-If you reference, reuse, or build on this project, please provide clear attribution to the original repository and author.
-
-## Usage Note
-
-This project is intended as an experimental interactive prototype.  
-It is designed to explore the combination of:
-
-- structured tarot knowledge
-- LLM-generated interpretation
-- symbolic interaction design
-
-It should be understood as a reflective tool rather than a source of absolute prediction.
+Shared for portfolio, research, and learning purposes.
+If you reuse or build on this project, please provide clear attribution to the original repository and author.
