@@ -3,6 +3,7 @@ from flask_cors import CORS
 import os
 import json
 import pathlib
+import re
 import requests
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
@@ -17,6 +18,15 @@ with open(CARDS_DATA_PATH, "r", encoding="utf-8") as f:
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "").strip()
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 DEEPSEEK_MODEL = "deepseek-chat"
+
+LEADING_LABEL_PATTERNS = (
+    "一句建议",
+    "温和建议",
+    "建议",
+    "宇宙想对你说",
+    "核心提醒",
+    "结合你的问题",
+)
 
 def find_card_data(card_name):
     for card in CARDS_DATA:
@@ -41,6 +51,39 @@ def get_type_hint(question_type):
         "自我成长": "重点解释阶段变化、内在动力、盲点、学习、突破与个人成长方向。"
     }
     return type_hint_map.get(question_type, "请结合用户的问题主题自然解读。")
+
+
+def strip_leading_labels(text):
+    if not text:
+        return ""
+
+    cleaned = text.strip()
+    for _ in range(3):
+        matched = False
+
+        # Strip bracketed headers like: 【建议】、【温和建议】、【一句建议】
+        bracket_match = re.match(r"^【\s*(一句建议|温和建议|建议|宇宙想对你说|核心提醒|结合你的问题)\s*】\s*", cleaned)
+        if bracket_match:
+            cleaned = cleaned[bracket_match.end():].strip()
+            matched = True
+
+        for label in LEADING_LABEL_PATTERNS:
+            for punct in ("：", ":"):
+                prefix = f"{label}{punct}"
+                if cleaned.startswith(prefix):
+                    cleaned = cleaned[len(prefix):].strip()
+                    matched = True
+
+            # Also strip raw prefixes without punctuation, e.g. "建议 ..."
+            if cleaned.startswith(label):
+                tail = cleaned[len(label):]
+                if not tail or tail[:1].isspace():
+                    cleaned = tail.strip()
+                    matched = True
+
+        if not matched:
+            break
+    return cleaned
 
 @app.route("/")
 def index():
@@ -143,6 +186,7 @@ JSON 结构固定为：
 8. analytical 风格更偏问题核心、因果线索与调整重点。
 9. 若为逆位，优先体现“哪里卡住 + 如何转正/调整”。
 10. 三段合起来控制在 180 到 320 字之间。
+11. advice 字段只写正文内容，不要以“建议：”“温和建议：”“一句建议：”等前缀开头。
 """
 
     payload = {
@@ -174,9 +218,9 @@ JSON 结构固定为：
         parsed = json.loads(content)
 
         return jsonify({
-            "core": parsed.get("core", ""),
-            "context": parsed.get("context", ""),
-            "advice": parsed.get("advice", "")
+            "core": strip_leading_labels(parsed.get("core", "")),
+            "context": strip_leading_labels(parsed.get("context", "")),
+            "advice": strip_leading_labels(parsed.get("advice", ""))
         })
 
     except requests.HTTPError:

@@ -161,7 +161,7 @@ function updateUI(card, aiReading) {
 
 结合你的问题：${aiReading.context}
 
-一句建议：${aiReading.advice}`;
+宇宙想对你说：${aiReading.advice}`;
 
   document.getElementById("cardReading").textContent =
     buildFixedMeaning(card) + "\n\n" + llmMeaning;
