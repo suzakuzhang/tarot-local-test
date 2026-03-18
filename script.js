@@ -66,6 +66,31 @@ const helpContent = document.getElementById("help-content") || document.getEleme
 const preDrawTipEl = document.getElementById("pre-draw-tip");
 const chooseCardTipEl = document.getElementById("choose-card-tip");
 const resultLeadEl = document.getElementById("result-lead");
+const readingProgressEl = document.getElementById("readingProgress");
+const readingProgressFillEl = document.getElementById("readingProgressFill");
+const progressPercentEl = document.getElementById("progressPercent");
+const readingFactEl = document.getElementById("readingFact");
+
+const MAX_DRAWS_PER_SESSION = 10;
+const DRAW_COUNT_KEY = "tarot_draw_count";
+const LOADING_FACTS = [
+  "大阿卡那常指阶段课题。",
+  "小阿卡那更贴近日常。",
+  "火与风偏主动推进。",
+  "水与土偏承接沉淀。",
+  "塔罗更像照见模式。",
+  "先看状态，再看建议。",
+  "同一张牌会因问题变焦。",
+  "图像常比关键词先说话。"
+];
+const REVERSED_LOADING_FACTS = [
+  "逆位不等于坏结果。",
+  "逆位常见受阻或过度。",
+  "逆位也可能是能量内收。",
+  "先找卡点，再谈推进。",
+  "先调节奏，再做决定。",
+  "逆位常提醒边界失衡。"
+];
 
 if (!shuffleBtn || !drawArea || !cardVisual || !emptyState || !resultCard) {
   console.warn("页面关键节点未找到：", {
@@ -78,6 +103,152 @@ if (!shuffleBtn || !drawArea || !cardVisual || !emptyState || !resultCard) {
 } else {
 
 let pendingDrawCard = null;
+let progressTimer = null;
+let factTimer = null;
+let progressHideTimer = null;
+let progressShowTimer = null;
+let currentProgress = 0;
+let loadingFactsPool = [...LOADING_FACTS];
+
+function clearProgressTimers() {
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
+  if (factTimer) {
+    clearInterval(factTimer);
+    factTimer = null;
+  }
+  if (progressHideTimer) {
+    clearTimeout(progressHideTimer);
+    progressHideTimer = null;
+  }
+  if (progressShowTimer) {
+    clearTimeout(progressShowTimer);
+    progressShowTimer = null;
+  }
+}
+
+function toMicroFact(text) {
+  if (!text) return "";
+  let cleaned = String(text)
+    .replace(/\s+/g, " ")
+    .replace(/[“”"【】]/g, "")
+    .trim();
+  if (!cleaned) return "";
+  cleaned = cleaned.split(/[。！？!?；;]/)[0].trim();
+  if (cleaned.length > 24) cleaned = `${cleaned.slice(0, 24)}…`;
+  if (cleaned.length < 6) return "";
+  return cleaned;
+}
+
+function setProgressValue(value) {
+  const bounded = Math.max(0, Math.min(100, Math.floor(value)));
+  currentProgress = bounded;
+  if (readingProgressFillEl) {
+    readingProgressFillEl.style.width = `${bounded}%`;
+  }
+  const track = readingProgressEl ? readingProgressEl.querySelector(".reading-progress-track") : null;
+  if (track) {
+    track.setAttribute("aria-valuenow", String(bounded));
+  }
+  if (progressPercentEl) {
+    progressPercentEl.textContent = `${bounded}%`;
+  }
+}
+
+function rotateLoadingFact() {
+  if (!readingFactEl || !loadingFactsPool.length) return;
+  const nextFact = loadingFactsPool[Math.floor(Math.random() * loadingFactsPool.length)];
+  readingFactEl.textContent = nextFact;
+}
+
+async function fetchLoadingFacts(orientation) {
+  const normalized = orientation === "reversed" ? "reversed" : "upright";
+  try {
+    const resp = await fetch(`/api/loading-facts?orientation=${normalized}&limit=18`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (Array.isArray(data.facts) && data.facts.length) {
+      const microFacts = data.facts
+        .map(toMicroFact)
+        .filter(Boolean)
+        .slice(0, 20);
+      if (microFacts.length) {
+        const fallback = orientation === "reversed" ? REVERSED_LOADING_FACTS : LOADING_FACTS;
+        loadingFactsPool = [...new Set([...microFacts, ...fallback])];
+      }
+      rotateLoadingFact();
+    }
+  } catch (_err) {
+    // Keep local fallback facts if backend facts are unavailable.
+  }
+}
+
+function startReadingProgress(orientation) {
+  if (!readingProgressEl) return;
+
+  clearProgressTimers();
+  loadingFactsPool = orientation === "reversed" ? [...REVERSED_LOADING_FACTS] : [...LOADING_FACTS];
+  setProgressValue(6 + Math.floor(Math.random() * 8));
+  progressShowTimer = setTimeout(() => {
+    if (!readingProgressEl) return;
+    readingProgressEl.classList.remove("hidden");
+    rotateLoadingFact();
+  }, 380);
+  fetchLoadingFacts(orientation);
+
+  progressTimer = setInterval(() => {
+    if (currentProgress >= 92) return;
+    const delta = currentProgress < 40 ? 6 : currentProgress < 70 ? 3 : 1;
+    setProgressValue(currentProgress + delta);
+  }, 340);
+
+  factTimer = setInterval(() => {
+    rotateLoadingFact();
+  }, 3800);
+}
+
+function finishReadingProgress() {
+  if (!readingProgressEl) return;
+
+  clearProgressTimers();
+  setProgressValue(100);
+  if (readingFactEl) {
+    readingFactEl.textContent = "讯息已落位，正在显现最终解读…";
+  }
+  progressHideTimer = setTimeout(() => {
+    if (readingProgressEl) {
+      readingProgressEl.classList.add("hidden");
+    }
+  }, 450);
+}
+
+function failReadingProgress() {
+  clearProgressTimers();
+  if (readingProgressEl) {
+    readingProgressEl.classList.add("hidden");
+  }
+}
+
+function getDrawCount() {
+  const raw = sessionStorage.getItem(DRAW_COUNT_KEY);
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+function setDrawCount(nextCount) {
+  sessionStorage.setItem(DRAW_COUNT_KEY, String(nextCount));
+}
+
+function lockDrawForSession() {
+  shuffleBtn.disabled = true;
+  shuffleBtn.textContent = "今日封盘";
+  drawArea.classList.add("hidden");
+  if (chooseCardTipEl) chooseCardTipEl.hidden = true;
+  emptyState.classList.remove("hidden");
+  emptyState.textContent = "你已在本次打开中抽牌 10 次。古话说‘卜不过三’，今天先到这里吧。";
+}
 
 async function loadCardsData() {
   const resp = await fetch("./cards_data.json");
@@ -244,6 +415,7 @@ function updateUI(card, aiReading) {
 }
 
 function startShuffleAnimation() {
+  failReadingProgress();
   resultCard.classList.remove("hidden");
   emptyState.classList.add("hidden");
 
@@ -257,6 +429,7 @@ function startShuffleAnimation() {
 }
 
 function startThinkingAnimation(card) {
+  startReadingProgress(card.orientation);
   cardVisual.classList.remove("shuffling");
   const rotateStyle = card.orientation === "reversed" ? "transform: rotate(180deg);" : "";
   cardVisual.innerHTML = `
@@ -303,6 +476,12 @@ if (questionTypeSelect) {
 }
 
 shuffleBtn.addEventListener("click", () => {
+  const currentCount = getDrawCount();
+  if (currentCount >= MAX_DRAWS_PER_SESSION) {
+    lockDrawForSession();
+    return;
+  }
+
   if (!majorArcana.length) {
     emptyState.classList.remove("hidden");
     emptyState.textContent = "牌库尚未加载完成，请刷新页面后重试。";
@@ -347,8 +526,16 @@ cardBackButtons.forEach(btn => {
       try {
         startThinkingAnimation(pendingDrawCard);
         const aiReading = await fetchAIReading(pendingDrawCard, questionType, questionText);
+        finishReadingProgress();
         updateUI(pendingDrawCard, aiReading);
+
+        const nextCount = getDrawCount() + 1;
+        setDrawCount(nextCount);
+        if (nextCount >= MAX_DRAWS_PER_SESSION) {
+          lockDrawForSession();
+        }
       } catch (err) {
+        failReadingProgress();
         document.getElementById("cardReading").textContent =
           buildFixedMeaning(pendingDrawCard) + "\n\n【结合你的问题的解读】\n解读生成失败：" + err.message;
       } finally {
@@ -366,6 +553,10 @@ cardBackButtons.forEach(btn => {
 
 applyStaticCopy();
 updateQuestionPlaceholder();
+
+if (getDrawCount() >= MAX_DRAWS_PER_SESSION) {
+  lockDrawForSession();
+}
 
 loadCardsData().catch(err => {
   console.error(err);

@@ -4,9 +4,11 @@ import os
 import json
 import pathlib
 import re
+import random
 import requests
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
+PRIVATE_DOCS_EXTRACTED_DIR = BASE_DIR / "private_docs" / "extracted"
 
 app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
 CORS(app)
@@ -35,6 +37,22 @@ META_LEAK_PATTERNS = (
 
 THIRD_PERSON_TERMS = ("用户", "提问者", "受占者")
 
+DEFAULT_UPRIGHT_FACTS = [
+    "大阿卡那更常指向你难以单独控制的阶段性课题。",
+    "小阿卡那更贴近日常可调整的行动与关系细节。",
+    "元素里，火与风偏主动，水与土偏向承接与沉淀。",
+    "元素组合会改变阅读重心，不只是单牌含义本身。",
+    "塔罗的价值常在于揭示模式，而不只是给答案。",
+]
+
+DEFAULT_REVERSED_FACTS = [
+    "逆位不等于坏，它更常提示受阻、过度或尚未对齐。",
+    "逆位有时是能量内化，问题从外部转向内在机制。",
+    "同一张牌逆位可能是误用，也可能是力度失衡。",
+    "逆位阅读更看重哪里卡住，而不只看结果好坏。",
+    "逆位常提醒你先调整节奏，再推进下一步行动。",
+]
+
 AUTHOR_STYLE_HINT = """
 请使用有明确作者性的塔罗语言，而不是通用安慰或牌义说明书口吻。
 
@@ -50,6 +68,88 @@ AUTHOR_STYLE_HINT = """
 9. 不要空泛鸡汤，不要使用“相信自己”“一切都会好起来”之类通用鼓励。
 10. 最终效果应像：你看起来在经历一件事，但这张牌更像在指出，真正困住你的其实是另一件事。
 """
+
+
+def _load_doc_text(path: pathlib.Path) -> str:
+    if not path.exists() or not path.is_file():
+        return ""
+    try:
+        return path.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return ""
+
+
+def _extract_facts_from_text(raw_text: str, topic: str) -> list[str]:
+    if not raw_text:
+        return []
+
+    text = raw_text.replace("\u3000", " ")
+    text = re.sub(r"\r\n?", "\n", text)
+    chunks = re.split(r"[\n。！？!?]+", text)
+
+    facts = []
+    seen = set()
+
+    skip_terms = (
+        "目录", "作者", "出版社", "简介", "简历", "第一章", "第二章", "第三章",
+        "第四章", "第五章", "第六章", "第七章", "第八章", "第九章", "第十章",
+        "第十一章", "第十二章", "台大", "课程"
+    )
+
+    if topic == "reversed":
+        include_terms = (
+            "逆位", "逆位置", "正位", "正位置", "牌义", "象征", "误用", "过度", "不足",
+            "减弱", "调整", "线索", "能量", "平衡", "转变"
+        )
+    else:
+        include_terms = (
+            "元素", "大阿卡那", "小阿卡那", "宫廷牌", "火", "水", "风", "土", "规则",
+            "友好的", "敌对", "组合", "能量", "排列"
+        )
+
+    for chunk in chunks:
+        line = re.sub(r"\s+", " ", chunk).strip(" -:：*·\t")
+        if not line:
+            continue
+        if len(line) < 8:
+            continue
+        if any(term in line for term in skip_terms):
+            continue
+        if not any(term in line for term in include_terms):
+            continue
+
+        line = re.sub(r"^[0-9一二三四五六七八九十]+[、.．)]\s*", "", line)
+        line = line.split("，")[0].strip()
+        line = line.split("：")[-1].strip()
+        if len(line) > 24:
+            line = line[:24].rstrip() + "…"
+        if len(line) < 8:
+            continue
+
+        if line in seen:
+            continue
+        seen.add(line)
+        facts.append(line)
+
+    return facts
+
+
+def _build_loading_facts() -> tuple[list[str], list[str]]:
+    upright_text = _load_doc_text(PRIVATE_DOCS_EXTRACTED_DIR / "塔罗和元素的联系及用法.txt")
+    reversed_text = _load_doc_text(PRIVATE_DOCS_EXTRACTED_DIR / "塔罗逆位精解.txt")
+
+    upright_facts = _extract_facts_from_text(upright_text, topic="upright")
+    reversed_facts = _extract_facts_from_text(reversed_text, topic="reversed")
+
+    if not upright_facts:
+        upright_facts = DEFAULT_UPRIGHT_FACTS[:]
+    if not reversed_facts:
+        reversed_facts = DEFAULT_REVERSED_FACTS[:]
+
+    return upright_facts, reversed_facts
+
+
+UPRIGHT_LOADING_FACTS, REVERSED_LOADING_FACTS = _build_loading_facts()
 
 def find_card_data(card_name):
     for card in CARDS_DATA:
@@ -330,6 +430,26 @@ JSON 结构固定为：
             "error": "解析模型返回失败",
             "detail": str(e)
         }), 500
+
+
+@app.route("/api/loading-facts", methods=["GET"])
+def loading_facts():
+    orientation = (request.args.get("orientation") or "upright").strip().lower()
+
+    try:
+        limit = int(request.args.get("limit", 12))
+    except ValueError:
+        limit = 12
+
+    limit = max(1, min(limit, 30))
+
+    source = REVERSED_LOADING_FACTS if orientation == "reversed" else UPRIGHT_LOADING_FACTS
+    if not source:
+        source = DEFAULT_REVERSED_FACTS if orientation == "reversed" else DEFAULT_UPRIGHT_FACTS
+
+    count = min(limit, len(source))
+    facts = random.sample(source, count) if len(source) > count else source[:count]
+    return jsonify({"facts": facts})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)), debug=True)
