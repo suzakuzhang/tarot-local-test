@@ -37,6 +37,48 @@ META_LEAK_PATTERNS = (
 
 THIRD_PERSON_TERMS = ("用户", "提问者", "受占者")
 
+GENERIC_ADVICE_PATTERNS = (
+    "相信自己",
+    "一切都会好起来",
+    "顺其自然",
+    "慢慢来",
+    "保持积极",
+    "放轻松",
+    "别想太多",
+    "照顾好自己",
+    "给自己一点时间",
+)
+
+ACTIONABLE_VERBS = (
+    "改写", "换成", "先做", "先把", "暂停", "停止", "减少", "增加",
+    "联系", "问清", "确认", "拒绝", "表达", "设定", "安排",
+    "收回", "划出", "保留", "限定", "调整", "执行", "测试", "试一次",
+    "跳过", "延后", "提前", "只做", "故意不做",
+)
+
+BORING_ADVICE_PATTERNS = (
+    "写下三个",
+    "列出三个",
+    "观察自己",
+    "感受一下",
+    "写下来看看",
+    "先别急着",
+    "允许它发生一点波动",
+    "看看会不会",
+    "试着问问自己",
+    "给自己一点时间",
+    "不急着做结论",
+    "慢慢来",
+    "允许自己",
+)
+
+QUESTION_ANCHOR_STOPWORDS = {
+    "我", "现在", "是否", "要不要", "到底", "怎么", "为什么", "什么", "事情", "问题",
+    "感觉", "自己", "这个", "那个", "这样", "那样", "可以", "应该", "需要", "还有",
+    "已经", "一直", "最近", "目前", "就是", "不是", "不会", "没有", "一个", "一些",
+    "工作", "感情", "情绪", "成长", "关系", "状态",
+}
+
 DEFAULT_UPRIGHT_FACTS = [
     "大阿卡那更常指向你难以单独控制的阶段性课题。",
     "小阿卡那更贴近日常可调整的行动与关系细节。",
@@ -58,20 +100,11 @@ AUTHOR_STYLE_HINT = """
 
 语言风格要求：
 1. 像在对一个具体的人做近距离、冷静、克制的观察。
-2. 不满足于描述表面情绪，要优先指出表象之下真正起作用的机制。
-3. 多写双层状态与反差，例如：明明已经动摇，却还在维持；表面平静，底下失衡；像是在犹豫，反而更像在拖延承认。
-4. 除了写状态，还要写“话里没说出来的那层东西”：嘴上否认、表面从容、实则失衡；看似不在意，底下却已经被碰到。
-5. 优先描写机制翻转：表面上像在处理 A，真正起作用的却是 B。
-6. 多写“留有余地”“没有彻底交出去”“还在暗中维持控制”这类状态，不把人写成完全被动。
-7. 允许带一点半真半假的锋利感，像轻轻点破，而不是直接宣判。
-8. 可以写误解、错位、迁怒、防备、嘴硬、拖延承认，但不要写成戏剧化争执。
-9. 不急着贴情绪标签，更关注：人是怎么藏、怎么撑、怎么转移、怎么装作没被碰到的。
-10. 段落收束时可使用短而有判断力的句式，如“不是……而是……”“未必是……反而更像……”“表面……底下却……”。
-11. 保持留白，不把一切解释死；允许“更像是在……”这类双层表达。
-12. 语言可以有叙述感，但不要写成完整剧情，不要堆砌修辞，不要为了文学感牺牲清晰度。
-13. core 先写状态，context 再扣问题，advice 最后只给一个轻推式的小动作。
-14. 不要空泛鸡汤，不要使用“相信自己”“一切都会好起来”之类通用鼓励。
-15. 最终效果应像：你看起来在经历一件事，但这张牌更像在指出，真正困住你的其实是另一件事。
+2. 先写状态与机制，不急着下情绪标签；优先呈现“表面 vs 底下”的反差。
+3. 允许“更像是在……”“未必是……反而更像……”这类留白表达，不写成剧情小说。
+4. 每次只抓一个主轴：core 写状态，context 扣问题，advice 给一个轻推小动作。
+5. 不要鸡汤和教程腔，不用“相信自己”“一切都会好起来”这类通用鼓励。
+6. 最终效果应像：你以为困住你的是A，这张牌更像指出真正起作用的是B。
 """
 
 FEW_SHOT_EXAMPLES = [
@@ -251,16 +284,6 @@ def get_focus_hint(question_type, orientation):
     return base
 
 
-def get_voice_intensity(question_style):
-    intensity_map = {
-        "感受流": "句子可以更轻、更近，优先细节感知与微妙变化，保留留白。",
-        "剧情流": "句子要有阶段推进感和转折张力，但避免冗长叙事。",
-        "拆解流": "句子更短更准，直接收束到关键机制与执行动作。",
-        "点破流": "语气清醒克制、略带锋利，重点放在表里反差与防御机制的点破。"
-    }
-    return intensity_map.get(question_style, intensity_map["点破流"])
-
-
 def build_few_shot_section(question_type, card_name, orientation):
     if not FEW_SHOT_EXAMPLES:
         return ""
@@ -277,14 +300,7 @@ def build_few_shot_section(question_type, card_name, orientation):
         if item["question_type"] == question_type and item not in exact
     ]
 
-    picked = []
-    if exact:
-        picked.append(exact[0])
-    if same_type:
-        picked.append(same_type[0])
-
-    if not picked:
-        picked = FEW_SHOT_EXAMPLES[:2]
+    picked = exact[:1] or same_type[:1] or FEW_SHOT_EXAMPLES[:1]
 
     blocks = []
     for idx, item in enumerate(picked, start=1):
@@ -358,6 +374,168 @@ def sanitize_llm_text(text):
     cleaned = re.sub(r"\s{2,}", " ", cleaned).strip()
     return cleaned
 
+
+def _looks_generic_advice(text: str) -> bool:
+    if not text:
+        return True
+
+    normalized = re.sub(r"\s+", "", text)
+    if len(normalized) < 12:
+        return True
+
+    if any(phrase in normalized for phrase in GENERIC_ADVICE_PATTERNS):
+        return True
+
+    return False
+
+
+def _has_actionable_signal(text: str) -> bool:
+    if not text:
+        return False
+
+    if any(verb in text for verb in ACTIONABLE_VERBS):
+        return True
+
+    # Allow lightweight time anchors as actionable hints.
+    return bool(re.search(r"(?:今天|这周|本周|接下来\d+天|24小时内)", text))
+
+
+def _looks_boring_but_actionable(text: str) -> bool:
+    if not text:
+        return False
+    normalized = re.sub(r"\s+", "", text)
+    return any(pattern in normalized for pattern in BORING_ADVICE_PATTERNS)
+
+
+def _extract_question_anchors(question_text: str) -> list[str]:
+    if not question_text:
+        return []
+
+    raw_tokens = re.split(r"[\s,，。！？!?:：；;、()（）\-\[\]{}\"'“”‘’/\\]+", question_text)
+    tokens = []
+    seen = set()
+
+    for token in raw_tokens:
+        t = token.strip()
+        if not t:
+            continue
+        if len(t) < 2 or len(t) > 12:
+            continue
+        if t in QUESTION_ANCHOR_STOPWORDS:
+            continue
+        if t in seen:
+            continue
+        seen.add(t)
+        tokens.append(t)
+
+    # Keep only the first few anchors to reduce noise.
+    return tokens[:6]
+
+
+def _advice_hits_question_anchor(advice: str, question_text: str) -> bool:
+    if not advice or not question_text:
+        return True
+
+    anchors = _extract_question_anchors(question_text)
+    if not anchors:
+        return True
+
+    return any(anchor in advice for anchor in anchors)
+
+
+def _needs_advice_rewrite(text: str, question_text: str) -> bool:
+    if _looks_generic_advice(text):
+        return True
+    if _looks_boring_but_actionable(text):
+        return True
+    if not _has_actionable_signal(text):
+        return True
+    if not _advice_hits_question_anchor(text, question_text):
+        return True
+    return False
+
+
+def rewrite_advice_if_needed(
+    advice: str,
+    *,
+    card_name: str,
+    orientation_label: str,
+    question_type: str,
+    question_text: str,
+    core: str,
+    context: str,
+) -> str:
+    if not _needs_advice_rewrite(advice, question_text):
+        return advice
+
+    anchors = _extract_question_anchors(question_text)
+    anchor_hint = "、".join(anchors[:3]) if anchors else "原问题中的关键场景"
+
+    rewrite_system = """
+你是塔罗解读中的“建议重写器”。
+任务：把原建议重写为“贴住问题场景、来自当前牌义机制、且可以立刻开始”的建议。
+
+硬性要求：
+1. 只输出 1 到 2 句中文，总长度 45 到 110 字。
+2. 第一部分用“换问法”或“情境触发”贴住原问题，不要泛化。
+3. 第二部分给一个能立刻执行的第一步，尽量包含对象、场景或产物。
+4. 必须是情境内可执行动作：明显来自原问题、当前牌义机制和前文卡点，不是任何问题都能套用的通用动作。
+5. 优先使用以下三种形式之一：
+    - 改写原问题，再接一个立即可执行的第一步；
+    - 设计一个低风险的小实验，测试前文指出的核心拉扯；
+    - 调整一次行动顺序，让人跳出当前卡点。
+6. 除非问题本身就是情绪梳理，否则避免默认输出“写下、列出、观察、想想、感受一下”。
+7. 避免鸡汤与空话，禁止“相信自己/一切都会好起来/顺其自然”等。
+8. 语气克制，不命令，不恐吓，不绝对预测，只用第二人称“你”。
+"""
+
+    rewrite_user = f"""
+背景：
+- 牌：{card_name}（{orientation_label}）
+- 主题：{question_type}
+- 问题：{question_text}
+- 问题关键词：{anchor_hint}
+- core：{core}
+- context：{context}
+
+原建议：{advice}
+
+请重写为更有建设性、贴题且可执行的建议。
+"""
+
+    payload = {
+        "model": DEEPSEEK_MODEL,
+        "messages": [
+            {"role": "system", "content": rewrite_system},
+            {"role": "user", "content": rewrite_user}
+        ],
+        "temperature": 0.35,
+        "max_tokens": 220
+    }
+
+    headers = {
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        resp = requests.post(
+            f"{DEEPSEEK_BASE_URL}/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+        resp.raise_for_status()
+        result = resp.json()
+        rewritten = result["choices"][0]["message"]["content"]
+        rewritten = sanitize_llm_text(rewritten)
+        if rewritten:
+            return rewritten
+    except Exception:
+        pass
+
+    return advice
+
 @app.route("/")
 def index():
     return send_from_directory(BASE_DIR, "index.html")
@@ -395,26 +573,19 @@ def reading():
     style_hint = get_style_hint(question_style)
     type_hint = get_type_hint(question_type)
     focus_hint = get_focus_hint(question_type, orientation)
-    voice_intensity = get_voice_intensity(question_style)
     effective_question = question_text.strip() if question_text and question_text.strip() else get_default_question(question_type)
     few_shot_section = build_few_shot_section(question_type, card_data["name_zh"], orientation)
 
     system_prompt = f"""
-你是一个有明确作者风格的塔罗解读者。你的语言不是通用安慰，也不是牌义说明书，而像是在对一个具体的人做一次近距离、克制、带张力的点破。
-
-你的解读只做三件事：
-1. 指出这张牌最突出的一个核心状态。
-2. 说明这个状态如何对应到当前问题。
-3. 给出一个温和、具体、可执行的小建议。
+你是一个有明确作者风格的塔罗解读者。语言要克制、贴人、带洞察，不要通用安慰和说明书口吻。
 
 {AUTHOR_STYLE_HINT}
 
 结构要求必须遵守：
 1. core：只写一个核心状态或当前张力，不要展开太多，不要解释整张牌。
 2. context：只写这个状态与当前问题的连接，不要重复 core，不要重新讲牌义。
-3. advice：只给一个最值得尝试的小动作，具体、温和、可执行。
-4. 每次只围绕一个主轴展开，不要面面俱到。
-5. 若为逆位，优先理解为受阻、过度、误用、内化，不等于坏结果。
+3. advice：给出一个贴着当前问题与这张牌核心机制的小动作、小实验，或新的提问方式。
+4. 若为逆位，优先理解为受阻、过度、误用、内化，不等于坏结果。
 
 安全与边界必须遵守：
 1. 不做绝对预测，不宣称未来必然发生。
@@ -432,9 +603,6 @@ def reading():
 
 当前解读聚焦要求：
 {focus_hint}
-
-当前文风强度要求：
-{voice_intensity}
 
 输出必须是合法 JSON，不要输出 JSON 以外的任何内容。
 
@@ -464,14 +632,13 @@ JSON 结构固定为：
 额外要求：
 1. 如果用户给了具体问题，必须明显回应这个问题，不能泛泛而谈。
 2. 先抓最突出的一个状态，不要把整张牌所有意思都讲出来。
-3. core 要像一次近距离观察：先写状态、裂缝、拉扯或失衡，不要直接下定义。
-4. context 要把这张牌和当前问题真正扣上，写出“到底卡在哪里”“难承认的是什么”“真正迟疑的是什么”。
-5. advice 只给一个最值得尝试的小动作，不要空泛鼓励，不要写成命令。
-6. 可以有作者风格、叙述感和一点锋利，但不能写成完整小说片段。
-7. 多使用“更像是在……”“未必是……反而更像……”“明明……却……”这类有留白和张力的表达。
-8. 不要写成牌义说明书，不要出现“这张牌代表……”这种过强的教程腔。
-9. 三段合起来控制在 220 到 380 字之间。
-10. advice 字段只写正文内容，不要以“建议：”“温和建议：”“一句建议：”等前缀开头。
+3. context 要把这张牌和当前问题真正扣上，写出“到底卡在哪里”或“真正迟疑的是什么”。
+4. advice 不是泛化收尾，而是基于 core 与 context 指出的核心机制，为这次问题设计小动作、小实验，或新的提问方式。
+5. advice 必须让人感觉“这一步只适用于这次问题”，不能像任何问题都适用的通用建议。
+6. advice 优先级：第一改写问题，第二设计低风险小实验，第三调整行动顺序，最后才是写下/列出/观察。
+7. advice 优先采用“换个问法 + 立刻可执行第一步”或“设计一个小实验”的结构。
+8. 除非非常必要，不要用“写下、列出、想想、观察、感受一下、慢慢来、给自己一点时间”作为建议骨架。
+9. 三段合起来控制在 220 到 380 字，且 advice 字段只写正文，不加“建议：”前缀。
 
 风格参考示例（只学习写法与刀法，不要复述或抄写句子内容）：
 {few_shot_section}
@@ -484,7 +651,7 @@ JSON 结构固定为：
             {"role": "user", "content": user_prompt}
         ],
         "response_format": {"type": "json_object"},
-        "temperature": 0.95,
+        "temperature": 0.78,
         "max_tokens": 500
     }
 
@@ -505,10 +672,23 @@ JSON 结构固定为：
         content = result["choices"][0]["message"]["content"]
         parsed = json.loads(content)
 
+        core = sanitize_llm_text(parsed.get("core", ""))
+        context_text = sanitize_llm_text(parsed.get("context", ""))
+        advice = sanitize_llm_text(parsed.get("advice", ""))
+        advice = rewrite_advice_if_needed(
+            advice,
+            card_name=card_data["name_zh"],
+            orientation_label=orientation_label,
+            question_type=question_type,
+            question_text=effective_question,
+            core=core,
+            context=context_text,
+        )
+
         return jsonify({
-            "core": sanitize_llm_text(parsed.get("core", "")),
-            "context": sanitize_llm_text(parsed.get("context", "")),
-            "advice": sanitize_llm_text(parsed.get("advice", ""))
+            "core": core,
+            "context": context_text,
+            "advice": advice
         })
 
     except requests.HTTPError:
