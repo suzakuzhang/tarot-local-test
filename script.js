@@ -434,9 +434,23 @@ async function fetchAIReading(card, questionType, questionText) {
     })
   });
 
-  const data = await resp.json();
+  const raw = await resp.text();
+  let data = null;
+  try {
+    data = JSON.parse(raw);
+  } catch (_err) {
+    const head = (raw || "").slice(0, 120).replace(/\s+/g, " ");
+    const isHtml = /^\s*<!doctype\s+html|^\s*<html/i.test(raw || "");
+    if (isHtml) {
+      throw new Error(
+        `后端返回了 HTML（HTTP ${resp.status}），通常是接口未命中或后端未启动。请确认通过 Flask 服务地址访问页面，并检查 /api/reading 路由。`
+      );
+    }
+    throw new Error(`后端返回了非 JSON 响应（HTTP ${resp.status}）：${head || "<empty>"}`);
+  }
+
   if (!resp.ok) {
-    throw new Error(data.detail || data.error || "API 请求失败");
+    throw new Error(data.detail || data.error || `API 请求失败（HTTP ${resp.status}）`);
   }
   return data;
 }
