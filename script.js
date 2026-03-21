@@ -69,6 +69,20 @@ const resultLeadEl = document.getElementById("result-lead");
 const loadingBoxEl = document.getElementById("loadingBox");
 const loadingStateEl = document.getElementById("loadingState");
 const loadingFactEl = document.getElementById("loadingFact");
+const spiritEntryEl = document.getElementById("spiritEntry");
+const spiritEnterBtn = document.getElementById("spiritEnterBtn");
+const spiritPanelEl = document.getElementById("spiritPanel");
+const spiritMessagesEl = document.getElementById("spiritMessages");
+const spiritInputEl = document.getElementById("spiritInput");
+const spiritSendBtn = document.getElementById("spiritSendBtn");
+const spiritEndBtn = document.getElementById("spiritEndBtn");
+const spiritTimerEl = document.getElementById("spiritTimer");
+const spiritRoundsEl = document.getElementById("spiritRounds");
+const spiritInviteModalEl = document.getElementById("spiritInviteModal");
+const spiritInviteInputEl = document.getElementById("spiritInviteInput");
+const spiritInviteConfirmBtn = document.getElementById("spiritInviteConfirm");
+const spiritInviteCancelBtn = document.getElementById("spiritInviteCancel");
+const spiritInviteErrorEl = document.getElementById("spiritInviteError");
 
 const MAX_DRAWS_PER_SESSION = 10;
 const DRAW_COUNT_KEY = "tarot_draw_count";
@@ -223,6 +237,12 @@ let factTimer = null;
 let loadingStateTimer1 = null;
 let loadingStateTimer2 = null;
 let loadingFactsPool = [...LOADING_FACTS.common];
+let currentReadingContext = null;
+let spiritSessionId = "";
+let spiritExpiresAt = "";
+let spiritRemainingRounds = 8;
+let spiritActive = false;
+let spiritTimerTask = null;
 
 function clearProgressTimers() {
   stopLoadingFactsRotation();
@@ -419,6 +439,7 @@ function detectQuestionStyle(questionText, questionType) {
 
 async function fetchAIReading(card, questionType, questionText) {
   const questionStyle = detectQuestionStyle(questionText, questionType);
+  const mappedType = questionTypeMap[questionType] || questionType;
 
   const resp = await fetch("/api/reading", {
     method: "POST",
@@ -428,12 +449,17 @@ async function fetchAIReading(card, questionType, questionText) {
     body: JSON.stringify({
       card_name: card.name_zh,
       orientation: card.orientation,
-      question_type: questionTypeMap[questionType] || questionType,
+      question_type: mappedType,
       question_text: questionText || "",
-      question_style: questionStyle
+      question_style: questionStyle,
+      direction: mappedType
     })
   });
 
+  return parseApiJson(resp, "/api/reading");
+}
+
+async function parseApiJson(resp, apiPath) {
   const raw = await resp.text();
   let data = null;
   try {
@@ -443,7 +469,7 @@ async function fetchAIReading(card, questionType, questionText) {
     const isHtml = /^\s*<!doctype\s+html|^\s*<html/i.test(raw || "");
     if (isHtml) {
       throw new Error(
-        `后端返回了 HTML（HTTP ${resp.status}），通常是接口未命中或后端未启动。请确认通过 Flask 服务地址访问页面，并检查 /api/reading 路由。`
+        `后端返回了 HTML（HTTP ${resp.status}），通常是接口未命中或后端未启动。请确认通过 Flask 服务地址访问页面，并检查 ${apiPath} 路由。`
       );
     }
     throw new Error(`后端返回了非 JSON 响应（HTTP ${resp.status}）：${head || "<empty>"}`);
@@ -453,6 +479,109 @@ async function fetchAIReading(card, questionType, questionText) {
     throw new Error(data.detail || data.error || `API 请求失败（HTTP ${resp.status}）`);
   }
   return data;
+}
+
+async function startCardSpirit(readingId, inviteCode) {
+  const resp = await fetch("/api/card-spirit/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      reading_id: readingId,
+      invite_code: inviteCode
+    })
+  });
+  return parseApiJson(resp, "/api/card-spirit/start");
+}
+
+async function sendCardSpiritMessage(sessionId, message) {
+  const resp = await fetch("/api/card-spirit/message", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      message
+    })
+  });
+  return parseApiJson(resp, "/api/card-spirit/message");
+}
+
+async function endCardSpirit(sessionId) {
+  const resp = await fetch("/api/card-spirit/end", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId })
+  });
+  return parseApiJson(resp, "/api/card-spirit/end");
+}
+
+function formatCountdown(expiresAt) {
+  const diff = Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
+  const mm = String(Math.floor(diff / 60)).padStart(2, "0");
+  const ss = String(diff % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
+}
+
+function updateSpiritMeta() {
+  if (spiritTimerEl) {
+    spiritTimerEl.textContent = spiritExpiresAt ? formatCountdown(spiritExpiresAt) : "00:00";
+  }
+  if (spiritRoundsEl) {
+    spiritRoundsEl.textContent = `剩余 ${Math.max(0, spiritRemainingRounds)} 轮`;
+  }
+}
+
+function appendSpiritMessage(role, content) {
+  if (!spiritMessagesEl) return;
+  const node = document.createElement("div");
+  node.className = `spirit-msg ${role}`;
+  node.textContent = content;
+  spiritMessagesEl.appendChild(node);
+  spiritMessagesEl.scrollTop = spiritMessagesEl.scrollHeight;
+}
+
+function setSpiritInputEnabled(enabled) {
+  if (spiritInputEl) spiritInputEl.disabled = !enabled;
+  if (spiritSendBtn) spiritSendBtn.disabled = !enabled;
+}
+
+function stopSpiritTimer() {
+  if (spiritTimerTask) {
+    clearInterval(spiritTimerTask);
+    spiritTimerTask = null;
+  }
+}
+
+function endSpiritUI(message) {
+  spiritActive = false;
+  setSpiritInputEnabled(false);
+  stopSpiritTimer();
+  if (message) appendSpiritMessage("assistant", message);
+  updateSpiritMeta();
+}
+
+function resetSpiritUI() {
+  stopSpiritTimer();
+  spiritSessionId = "";
+  spiritExpiresAt = "";
+  spiritRemainingRounds = 8;
+  spiritActive = false;
+  if (spiritMessagesEl) spiritMessagesEl.innerHTML = "";
+  if (spiritInputEl) spiritInputEl.value = "";
+  if (spiritPanelEl) spiritPanelEl.classList.add("hidden");
+  if (spiritEntryEl) spiritEntryEl.classList.add("hidden");
+  setSpiritInputEnabled(false);
+  updateSpiritMeta();
+}
+
+function startSpiritTimerWatcher() {
+  stopSpiritTimer();
+  spiritTimerTask = setInterval(() => {
+    updateSpiritMeta();
+    if (!spiritExpiresAt) return;
+    if (Date.now() >= new Date(spiritExpiresAt).getTime()) {
+      endSpiritUI("这张牌今天先陪你到这里。这一轮对话先停在这里。");
+    }
+  }, 1000);
 }
 
 function applyStaticCopy() {
@@ -508,7 +637,7 @@ ${card.summary_meaning}
 ${orientationMeaning}`;
 }
 
-function updateUI(card, aiReading) {
+function updateUI(card, aiReading, questionText, questionType) {
   const orientationLabel = card.orientation === "upright" ? "正位" : "逆位";
 
   document.getElementById("cardName").textContent = card.name_zh;
@@ -524,6 +653,23 @@ function updateUI(card, aiReading) {
 
   document.getElementById("cardReading").textContent =
     buildFixedMeaning(card) + "\n\n" + llmMeaning;
+
+  currentReadingContext = {
+    readingId: aiReading.reading_id || "",
+    cardName: card.name_zh,
+    orientation: card.orientation,
+    question: questionText || "",
+    direction: questionTypeMap[questionType] || questionType || ""
+  };
+
+  if (spiritEntryEl) {
+    if (currentReadingContext.readingId) {
+      spiritEntryEl.classList.remove("hidden");
+    } else {
+      spiritEntryEl.classList.add("hidden");
+    }
+  }
+  if (spiritPanelEl) spiritPanelEl.classList.add("hidden");
 
   const rotateStyle = card.orientation === "reversed" ? "transform: rotate(180deg);" : "";
   cardVisual.innerHTML = `
@@ -597,6 +743,124 @@ if (questionTypeSelect) {
   questionTypeSelect.addEventListener("change", updateQuestionPlaceholder);
 }
 
+if (spiritEnterBtn && spiritInviteModalEl) {
+  spiritEnterBtn.addEventListener("click", () => {
+    if (!currentReadingContext || !currentReadingContext.readingId) {
+      return;
+    }
+    spiritInviteModalEl.classList.remove("hidden");
+    if (spiritInviteErrorEl) {
+      spiritInviteErrorEl.textContent = "";
+      spiritInviteErrorEl.classList.add("hidden");
+    }
+    if (spiritInviteInputEl) {
+      spiritInviteInputEl.value = "";
+      spiritInviteInputEl.focus();
+    }
+  });
+}
+
+if (spiritInviteCancelBtn && spiritInviteModalEl) {
+  spiritInviteCancelBtn.addEventListener("click", () => {
+    spiritInviteModalEl.classList.add("hidden");
+  });
+}
+
+if (spiritInviteConfirmBtn && spiritInviteModalEl) {
+  spiritInviteConfirmBtn.addEventListener("click", async () => {
+    try {
+      if (!currentReadingContext || !currentReadingContext.readingId) {
+        throw new Error("当前抽牌结果不可用，请先完成一次单抽。")
+      }
+
+      const inviteCode = spiritInviteInputEl ? spiritInviteInputEl.value.trim() : "";
+      if (!inviteCode) {
+        throw new Error("请输入邀请码。")
+      }
+
+      spiritInviteConfirmBtn.disabled = true;
+      const data = await startCardSpirit(currentReadingContext.readingId, inviteCode);
+
+      spiritInviteModalEl.classList.add("hidden");
+      if (spiritPanelEl) spiritPanelEl.classList.remove("hidden");
+      if (spiritMessagesEl) spiritMessagesEl.innerHTML = "";
+
+      spiritSessionId = data.session.session_id;
+      spiritExpiresAt = data.session.expires_at;
+      spiritRemainingRounds = data.session.remaining_rounds;
+      spiritActive = data.session.status === "active";
+
+      appendSpiritMessage("assistant", data.opening_message || "这张牌想先听你说一句真话。")
+      setSpiritInputEnabled(true);
+      updateSpiritMeta();
+      startSpiritTimerWatcher();
+    } catch (err) {
+      if (spiritInviteErrorEl) {
+        spiritInviteErrorEl.textContent = err.message || "开启失败，请稍后重试。";
+        spiritInviteErrorEl.classList.remove("hidden");
+      }
+    } finally {
+      spiritInviteConfirmBtn.disabled = false;
+    }
+  });
+}
+
+if (spiritSendBtn && spiritInputEl) {
+  spiritSendBtn.addEventListener("click", async () => {
+    const text = spiritInputEl.value.trim();
+    if (!text) return;
+    if (!spiritActive || !spiritSessionId) return;
+    if (spiritRemainingRounds <= 0) {
+      endSpiritUI("这张牌今天先陪你到这里。这一轮对话先停在这里。");
+      return;
+    }
+
+    appendSpiritMessage("user", text);
+    spiritInputEl.value = "";
+
+    try {
+      spiritSendBtn.disabled = true;
+      const data = await sendCardSpiritMessage(spiritSessionId, text);
+      appendSpiritMessage("assistant", data.reply || "我听到了，我们继续围绕这张牌看。")
+      spiritRemainingRounds = Number(data.remaining_rounds || spiritRemainingRounds);
+      spiritActive = data.status === "active";
+      updateSpiritMeta();
+
+      if (!spiritActive || spiritRemainingRounds <= 0) {
+        endSpiritUI("这张牌今天先陪你到这里。真正要做决定的，仍然是你。")
+      }
+    } catch (err) {
+      appendSpiritMessage("assistant", `当前追问失败：${err.message || "未知错误"}`)
+    } finally {
+      spiritSendBtn.disabled = false;
+    }
+  });
+}
+
+if (spiritInputEl) {
+  spiritInputEl.addEventListener("keydown", ev => {
+    if (ev.key === "Enter" && !ev.shiftKey) {
+      ev.preventDefault();
+      if (spiritSendBtn) spiritSendBtn.click();
+    }
+  });
+}
+
+if (spiritEndBtn) {
+  spiritEndBtn.addEventListener("click", async () => {
+    if (!spiritSessionId) {
+      endSpiritUI("这张牌今天先陪你到这里。")
+      return;
+    }
+    try {
+      await endCardSpirit(spiritSessionId);
+    } catch (_err) {
+      // Ignore network errors on manual end; local UI still closes this round.
+    }
+    endSpiritUI("这张牌今天先陪你到这里。真正要做决定的，仍然是你。")
+  });
+}
+
 shuffleBtn.addEventListener("click", () => {
   const currentCount = getDrawCount();
   if (currentCount >= MAX_DRAWS_PER_SESSION) {
@@ -609,6 +873,9 @@ shuffleBtn.addEventListener("click", () => {
     emptyState.textContent = "牌库尚未加载完成，请刷新页面后重试。";
     return;
   }
+
+  resetSpiritUI();
+  currentReadingContext = null;
 
   pendingDrawCard = drawFromDeck().drawnCard;
   resetLoadingUI();
@@ -661,7 +928,7 @@ cardBackButtons.forEach(btn => {
 
         const aiReading = await fetchAIReading(pendingDrawCard, questionType, questionText);
         resetLoadingUI();
-        updateUI(pendingDrawCard, aiReading);
+        updateUI(pendingDrawCard, aiReading, questionText, questionType);
 
         const nextCount = getDrawCount() + 1;
         setDrawCount(nextCount);
@@ -672,6 +939,8 @@ cardBackButtons.forEach(btn => {
         resetLoadingUI();
         document.getElementById("cardReading").textContent =
           buildFixedMeaning(pendingDrawCard) + "\n\n【这张牌照见了什么】\n解读生成失败：" + err.message;
+        resetSpiritUI();
+        currentReadingContext = null;
       } finally {
         pendingDrawCard = null;
         shuffleBtn.disabled = false;
@@ -688,6 +957,7 @@ cardBackButtons.forEach(btn => {
 applyStaticCopy();
 updateQuestionPlaceholder();
 resetLoadingUI();
+resetSpiritUI();
 
 if (getDrawCount() >= MAX_DRAWS_PER_SESSION) {
   lockDrawForSession();

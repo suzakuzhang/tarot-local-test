@@ -6,6 +6,14 @@ import pathlib
 import re
 import random
 import requests
+from invite_codes import validate_invite_code
+from card_spirit_session import card_spirit_sessions
+from card_spirit_prompt import (
+    build_spirit_system_prompt,
+    build_opening_user_prompt,
+    build_reply_user_prompt,
+)
+from gemini_client import generate_spirit_reply, GeminiClientError
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 PRIVATE_DOCS_EXTRACTED_DIR = BASE_DIR / "private_docs" / "extracted"
@@ -534,6 +542,18 @@ def apply_basic_advice_fallback(advice: str, question_text: str, element: str) -
 
     return sanitize_llm_text(fallback)
 
+
+def _spirit_orientation_label(orientation: str) -> str:
+    return "正位" if orientation == "upright" else "逆位"
+
+
+def _default_spirit_opening(card_name: str, orientation: str, question: str) -> str:
+    orientation_label = _spirit_orientation_label(orientation)
+    return (
+        f"我会继续围绕{card_name}（{orientation_label}）和你刚才的问题走。"
+        f"你先说说：当你再次看向‘{question}’时，心里最先紧起来的是哪一处？"
+    )
+
 @app.route("/")
 def index():
     return send_from_directory(BASE_DIR, "index.html")
@@ -561,6 +581,7 @@ def reading():
     question_type = data.get("question_type", "")
     question_text = data.get("question_text", "")
     question_style = data.get("question_style", "自然流")
+    direction = data.get("direction", "")
 
     orientation_label = "正位" if orientation == "upright" else "逆位"
 
@@ -698,8 +719,15 @@ JSON 结构固定为：
         context_text = sanitize_llm_text(parsed.get("context", ""))
         advice = sanitize_llm_text(parsed.get("advice", ""))
         advice = apply_basic_advice_fallback(advice, effective_question, element)
+        reading_id = card_spirit_sessions.create_reading(
+            card_name=card_name,
+            orientation=orientation,
+            question=effective_question,
+            direction=direction,
+        )
 
         return jsonify({
+            "reading_id": reading_id,
             "core": core,
             "context": context_text,
             "advice": advice
@@ -715,6 +743,171 @@ JSON 结构固定为：
             "error": "解析模型返回失败",
             "detail": str(e)
         }), 500
+
+
+@app.route("/api/card-spirit/start", methods=["POST"])
+def card_spirit_start():
+    data = request.get_json(force=True)
+    reading_id = (data.get("reading_id") or "").strip()
+    invite_code = (data.get("invite_code") or "").strip()
+
+    if not reading_id:
+        return jsonify({"error": "缺少 reading_id"}), 400
+    if not validate_invite_code(invite_code):
+        return jsonify({"error": "邀请码错误"}), 403
+
+    reading = card_spirit_sessions.get_reading(reading_id)
+    if not reading:
+        return jsonify({"error": "reading_id 无效或已失效"}), 404
+
+    try:
+        session = card_spirit_sessions.create_session(reading_id=reading_id, invite_code=invite_code)
+    except ValueError:
+        return jsonify({"error": "无法创建牌灵会话"}), 400
+
+    try:
+        opening_prompt = build_opening_user_prompt(
+            card_name=session.card_name,
+            orientation=session.orientation,
+            question=session.question,
+            direction=session.direction,
+        )
+        opening_text = generate_spirit_reply(build_spirit_system_prompt(), opening_prompt)
+    except GeminiClientError:
+        opening_text = _default_spirit_opening(session.card_name, session.orientation, session.question)
+
+    opening_text = sanitize_llm_text(opening_text)
+    card_spirit_sessions.append_message(
+        session_id=session.session_id,
+        role="assistant",
+        content=opening_text,
+        round_index=0,
+    )
+
+    return jsonify({
+        "session": card_spirit_sessions.serialize_session(session),
+        "opening_message": opening_text,
+        "messages": [
+            {
+                "role": "assistant",
+                "content": opening_text,
+                "round_index": 0,
+            }
+        ],
+    })
+
+
+@app.route("/api/card-spirit/message", methods=["POST"])
+def card_spirit_message():
+    data = request.get_json(force=True)
+    session_id = (data.get("session_id") or "").strip()
+    user_message = (data.get("message") or "").strip()
+
+    if not session_id:
+        return jsonify({"error": "缺少 session_id"}), 400
+    if not user_message:
+        return jsonify({"error": "消息不能为空"}), 400
+
+    session = card_spirit_sessions.get_session(session_id)
+    if not session:
+        return jsonify({"error": "会话不存在"}), 404
+
+    ok, reason = card_spirit_sessions.can_chat(session)
+    if not ok:
+        if reason == "rounds_exhausted":
+            return jsonify({"error": "已达到最大轮数", "status": session.status}), 410
+        return jsonify({"error": "会话已结束", "status": session.status}), 410
+
+    next_round = card_spirit_sessions.max_rounds - session.remaining_rounds + 1
+    card_spirit_sessions.append_message(
+        session_id=session_id,
+        role="user",
+        content=user_message,
+        round_index=next_round,
+    )
+
+    recent_messages = [
+        {
+            "role": m.role,
+            "content": m.content,
+            "round_index": m.round_index,
+        }
+        for m in card_spirit_sessions.get_recent_messages(session_id, max_items=8)
+    ]
+
+    prompt = build_reply_user_prompt(
+        card_name=session.card_name,
+        orientation=session.orientation,
+        question=session.question,
+        direction=session.direction,
+        summary_state=session.summary_state,
+        recent_messages=recent_messages,
+        user_message=user_message,
+    )
+
+    try:
+        reply = generate_spirit_reply(build_spirit_system_prompt(), prompt)
+    except GeminiClientError as exc:
+        return jsonify({"error": str(exc)}), 500
+
+    reply = sanitize_llm_text(reply)
+    card_spirit_sessions.append_message(
+        session_id=session_id,
+        role="assistant",
+        content=reply,
+        round_index=next_round,
+    )
+    card_spirit_sessions.consume_round(session)
+
+    return jsonify({
+        "reply": reply,
+        "remaining_rounds": session.remaining_rounds,
+        "status": session.status,
+        "expires_at": session.expires_at,
+    })
+
+
+@app.route("/api/card-spirit/end", methods=["POST"])
+def card_spirit_end():
+    data = request.get_json(force=True)
+    session_id = (data.get("session_id") or "").strip()
+    if not session_id:
+        return jsonify({"error": "缺少 session_id"}), 400
+
+    session = card_spirit_sessions.end_session(session_id, reason="ended")
+    if not session:
+        return jsonify({"error": "会话不存在"}), 404
+
+    return jsonify({
+        "status": session.status,
+        "message": "这张牌今天先陪你到这里。真正要做决定的，仍然是你。",
+    })
+
+
+@app.route("/api/card-spirit/status", methods=["GET"])
+def card_spirit_status():
+    session_id = (request.args.get("session_id") or "").strip()
+    if not session_id:
+        return jsonify({"error": "缺少 session_id"}), 400
+
+    session = card_spirit_sessions.get_session(session_id)
+    if not session:
+        return jsonify({"error": "会话不存在"}), 404
+
+    messages = [
+        {
+            "role": m.role,
+            "content": m.content,
+            "created_at": m.created_at,
+            "round_index": m.round_index,
+        }
+        for m in card_spirit_sessions.get_recent_messages(session_id, max_items=20)
+    ]
+
+    return jsonify({
+        "session": card_spirit_sessions.serialize_session(session),
+        "messages": messages,
+    })
 
 
 @app.route("/api/loading-facts", methods=["GET"])

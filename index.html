@@ -92,6 +92,30 @@
             <p id="loadingFact" class="loading-fact">正在展开牌阵符号…</p>
           </div>
           <div id="cardReading" class="reading-box">-</div>
+
+          <div id="spiritEntry" class="spirit-entry hidden">
+            <h3>牌灵模式</h3>
+            <p>这张牌还有话没有说完。输入邀请码，开启一次 10 分钟的延伸追问。</p>
+            <button id="spiritEnterBtn" type="button">进入牌灵模式</button>
+          </div>
+
+          <div id="spiritPanel" class="spirit-panel hidden">
+            <div class="spirit-panel-head">
+              <strong>牌灵对话</strong>
+              <div class="spirit-meta">
+                <span id="spiritTimer">10:00</span>
+                <span id="spiritRounds">剩余 8 轮</span>
+              </div>
+            </div>
+            <div id="spiritMessages" class="spirit-messages"></div>
+            <div class="spirit-input-row">
+              <input id="spiritInput" type="text" maxlength="220" placeholder="继续追问这张牌想让你看见的东西" />
+              <button id="spiritSendBtn" type="button">发送</button>
+            </div>
+            <div class="spirit-actions">
+              <button id="spiritEndBtn" type="button" class="ghost-btn">结束本轮</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -113,6 +137,19 @@
   <p>如果你喜欢这个项目，欢迎在 GitHub 上点亮star。</p>
 </footer>
   </main>
+
+  <div id="spiritInviteModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3>输入邀请码</h3>
+      <p>此模式仅围绕当前问题与当前牌展开，限时 10 分钟。</p>
+      <input id="spiritInviteInput" type="text" maxlength="64" placeholder="请输入邀请码" />
+      <p id="spiritInviteError" class="modal-error hidden"></p>
+      <div class="modal-actions">
+        <button id="spiritInviteConfirm" type="button">验证并开启</button>
+        <button id="spiritInviteCancel" type="button" class="ghost-btn">取消</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/script.js"></script>
 </body>
