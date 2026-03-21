@@ -49,36 +49,6 @@ GENERIC_ADVICE_PATTERNS = (
     "给自己一点时间",
 )
 
-ACTIONABLE_VERBS = (
-    "改写", "换成", "先做", "先把", "暂停", "停止", "减少", "增加",
-    "联系", "问清", "确认", "拒绝", "表达", "设定", "安排",
-    "收回", "划出", "保留", "限定", "调整", "执行", "测试", "试一次",
-    "跳过", "延后", "提前", "只做", "故意不做",
-)
-
-BORING_ADVICE_PATTERNS = (
-    "写下三个",
-    "列出三个",
-    "观察自己",
-    "感受一下",
-    "写下来看看",
-    "先别急着",
-    "允许它发生一点波动",
-    "看看会不会",
-    "试着问问自己",
-    "给自己一点时间",
-    "不急着做结论",
-    "慢慢来",
-    "允许自己",
-)
-
-QUESTION_ANCHOR_STOPWORDS = {
-    "我", "现在", "是否", "要不要", "到底", "怎么", "为什么", "什么", "事情", "问题",
-    "感觉", "自己", "这个", "那个", "这样", "那样", "可以", "应该", "需要", "还有",
-    "已经", "一直", "最近", "目前", "就是", "不是", "不会", "没有", "一个", "一些",
-    "工作", "感情", "情绪", "成长", "关系", "状态",
-}
-
 DEFAULT_UPRIGHT_FACTS = [
     "大阿卡那更常指向你难以单独控制的阶段性课题。",
     "小阿卡那更贴近日常可调整的行动与关系细节。",
@@ -96,60 +66,146 @@ DEFAULT_REVERSED_FACTS = [
 ]
 
 AUTHOR_STYLE_HINT = """
-请使用有明确作者性的塔罗语言，而不是通用安慰或牌义说明书口吻。
-
-语言风格要求：
-1. 像在对一个具体的人做近距离、冷静、克制的观察。
-2. 先写状态与机制，不急着下情绪标签；优先呈现“表面 vs 底下”的反差。
-3. 允许“更像是在……”“未必是……反而更像……”这类留白表达，不写成剧情小说。
-4. 每次只抓一个主轴：core 写状态，context 扣问题，advice 给一个轻推小动作。
-5. 不要鸡汤和教程腔，不用“相信自己”“一切都会好起来”这类通用鼓励。
-6. 最终效果应像：你以为困住你的是A，这张牌更像指出真正起作用的是B。
+请保留一种清醒、贴近、克制的观察感。
+比起解释表面情绪，更关注真正起作用的关系机制、心理机制或拖延机制。
+不要故意华丽，不要句句点破，不要写成说明书。
+像一个很会看人、但不卖弄的人在说话。
 """
 
-FEW_SHOT_EXAMPLES = [
-    {
-        "question_type": "工作",
-        "card_name": "星星",
-        "orientation": "reversed",
-        "theme": "希望松动",
-        "output": "这张牌先照见的，未必是你完全没有方向，反而更像是你对原本相信的那条路开始松了手。你表面上还在冷静衡量，底下却已经把那点信任压得很薄，所以真正拽住你的，不只是现实压力，而是你暂时不愿承认：自己其实没有之前那么相信了。先别逼自己看很远。把那个最想做、又最容易被你怀疑的念头拆成今天能落地的一小步，先让它重新回到手里。"
-    },
-    {
-        "question_type": "感情",
-        "card_name": "恋人",
-        "orientation": "upright",
-        "theme": "关系变近但不敢认",
-        "output": "你看起来像是在猜对方的态度，实际上更像是在回避自己已经开始在意这件事。这张牌未必是在催你立刻确认关系，反而更像在提醒你：有些靠近已经发生了，只是你还在给自己留余地，不肯太早承认这份在意已经超过了普通。现在更适合你做的，不是追问答案，而是先分清楚：你到底在等对方的回应，还是在等自己不再嘴硬。"
-    },
-    {
-        "question_type": "情绪",
-        "card_name": "月亮",
-        "orientation": "upright",
-        "theme": "反复想太多",
-        "output": "这张牌先指出的，不只是情绪起伏，而是你已经太习惯在看不清的时候自己把空白补满。你表面上是在分析，底下却有很多没有说清的担心先一步长成了判断，所以真正让你累的，未必只是事情本身，而是你一直在替未知添重量。暂时别急着得出结论。先把最近最反复冒出来的那种担心写下来，看它到底是现实的线索，还是你心里还没说清的那层雾。"
-    },
-    {
-        "question_type": "自我成长",
-        "card_name": "倒吊人",
-        "orientation": "upright",
-        "theme": "拖延开始",
-        "output": "你看起来像是在等一个更合适的时机，实际上更像是在拖延承认：这件事早就该动了。这张牌不是在说你做不到，而是在提醒你，你一直把再等等看用得太顺手，于是那一点本来就不多的行动意愿，也被你自己慢慢耗散了。不用一下子做很多。先做一件小到不能再推的事，把开始从想法里拖回现实。"
-    },
-    {
-        "question_type": "工作",
-        "card_name": "皇帝",
-        "orientation": "upright",
-        "theme": "明明很想稳但快撑不住",
-        "output": "表面上你更像是在讲秩序、讲责任、讲应该怎么做，底下却已经有一部分力快撑不住了。这张牌未必是在鼓励你继续硬扛，反而更像在提醒你：真正的问题不是你不够负责，而是你把维持局面这件事做得太久，久到快要分不清这是能力，还是负担。现在更适合你的，不是继续把每件事都接住，而是先划出一条边界，看清哪些真的是你该扛的，哪些只是你习惯了不放手。"
-    },
-    {
-        "question_type": "感情",
-        "card_name": "星星",
-        "orientation": "reversed",
-        "theme": "看似放下，实际没放",
-        "output": "你嘴上可能已经说得很轻了，像是这件事也没什么大不了，但这张牌更像在说：真正没放下的，不是那个人本身，而是你曾经认真相信过的那种可能。表面上像是在往前走，底下却还有一小块没有真正松开，所以你不是走不动，只是每走一步都还在回头确认，自己当初到底是不是看错了。暂时别急着逼自己彻底放下。先承认那点失望还在，再看你要不要继续把它留在原地。"
-    }
+ADVICE_STYLE_HINT = """
+advice 不必太务实，也不必像任务建议。
+它可以是一句带有画面感的轻提醒，一个和这张牌气质相符的小动作，一个从元素/五行出发的日常建议，或一句今日宜忌。
+优先给出能安放情绪、调整状态、让人愿意去做的小建议，而不是逼你立刻解决问题。
+可以诗意，但不要悬浮；可以温柔，但不要空泛。
+尽量让 advice 像“这张牌今天陪你怎么过”，而不是“你接下来该完成什么”。
+"""
+
+ADVICE_FORMAT_HINT = """
+advice 请优先从以下四种形式中选择最合适的一种：
+1. 元素建议：根据火、水、风、土给一个身体或环境上的小动作。
+2. 宜忌提醒：给一句适合今天的“宜/忌”。
+3. 轻仪式：给一个不费力、但有象征感的小动作。
+4. 余韵句：给一句能陪你停一会儿的话。
+不要把 advice 写成任务清单，也不要像效率建议。
+"""
+
+TIANFENG_STYLE_HINT = """
+写法参考（只学写法，不复述原句）：
+1. 多用具体场景与可见细节承载情绪，不先下结论。
+2. 允许短句与停顿，让语气有呼吸感，不把每句话写满。
+3. 情绪表达保持克制，先写动作、环境或身体反应，再点出心事。
+4. 让叙述里保留一点未说透的余波，用留白制造后劲。
+5. 语感上偏冷静、贴人、节制，避免口号式安慰和说教。
+"""
+
+PERSONAL_STYLE_HINT = """
+你的个人写法参考（只学风格机制，不复述原文）：
+1. 先写细节与动作，再让情绪浮出来，少直接喊情绪名词。
+2. 擅长在“表面平静/内里拉扯”之间制造张力，但不需要每句都反转。
+3. 句式可长短交替，关键句适当变短，形成压强与停顿。
+4. 多用可感知的触点（呼吸、目光、步伐、光线、冷热）承载心理变化。
+5. 保持克制和锋利并存：不说教，不空泛，留一点未说透的余韵。
+"""
+
+PERSONAL_STYLE_SOFT_HINT = """
+个人流-克制：
+保持细节先行与留白感，语气更柔和，减少锋利判断。
+多用缓推式表达，让读者有被接住的感觉。
+"""
+
+PERSONAL_STYLE_SHARP_HINT = """
+个人流-锋利：
+保持细节先行，但结论更短更准，适度增加判断力度。
+允许一句点破核心错位，随后迅速收束，不连续追击。
+"""
+
+LUCKY_OBSERVATION_HINT = """
+请保留一种清醒、贴近、克制的观察感。
+1. 不要急着接受问题表面的说法，优先辨认真正推动局面的力量。
+2. 不只描述情绪，要看当事人在关系或局面里处在什么位置：谁在等，谁在拖，谁在撑，谁在试探，谁已经交出了主动权。
+3. 优先相信已经发生的行为、选择和模式，而不只相信口头表态。
+4. 很多问题不是完全看不清，而是还没有准备好承认自己其实已经感觉到了什么；可以指出这一点，但不要咄咄逼人。
+5. 优先捕捉细微但真实的失衡，不要把所有状态都写成激烈情绪。
+6. 只点出最关键的一处，不要把所有隐藏层都说破；允许留白，像一个很会看人但不卖弄的人在说话。
+"""
+
+LUCKY_STYLE_HINT_2 = """
+请像一个很会看人、但不卖弄的人那样说话。
+不要只认表面，要看真正推动局面的力量；
+不要只写情绪，要看当事人在这段局面里处在什么位置；
+优先相信已经发生的行为和模式，而不只相信嘴上怎么说；
+很多问题不是完全不知道，而是还没准备好承认；
+只点出最关键的一处，不要每次都把人看穿到底。
+"""
+
+# A low-probability hidden style pool; configurable through env var.
+try:
+    LUCKY_POOL_PROB = float(os.getenv("TAROT_LUCKY_POOL_PROB", "0.035"))
+except (TypeError, ValueError):
+    LUCKY_POOL_PROB = 0.035
+
+ELEMENT_THEORY_HINT = """
+元素机制（用于解读优先级，不是硬性结论）：
+1. 火和水是敌对组合，彼此削弱；风和土是敌对组合，彼此削弱；其余组合多为友好并互相增强。
+2. 火与风偏主动，水与土偏被动。
+3. 能量观感上：火火/风风易过分活跃，水水/土土易过分消极；火水与风土常形成中和或僵局感。
+4. 解读时优先先看能量流动（增强、受阻、过热、过冷），再落回事件层。
+"""
+
+ELEMENT_ADVICE_POOL = {
+    "火": [
+        "先去见一点光，再决定要不要继续想这件事。",
+        "今天更适合慢走一段路，让身体先热起来，别把自己关在原地打转。",
+        "去有光的地方待一会儿，让停滞先松开一点。",
+    ],
+    "水": [
+        "喝一杯热的，今晚先别逼自己得出结论。",
+        "先让心回温，再谈答案。",
+        "靠近一点安静和柔软，别在情绪最满的时候追问结果。",
+    ],
+    "风": [
+        "先开窗，让空气进来，再看这件事。",
+        "把脑子里最吵的一句写下来，思绪会松一点。",
+        "先把缠在一起的线理开，再决定要说什么。",
+    ],
+    "土": [
+        "吃点热的，收一收桌面，让自己先落地。",
+        "先做一件看得见摸得着的小事，再回来看问题。",
+        "今天更适合安顿身体，而不是继续悬在想象里。",
+    ],
+}
+
+YI_JI_POOL = [
+    "今日宜：见光，慢走，少解释。今日忌：在夜里替一段关系找答案。",
+    "今日宜：开窗，整理一个小角落。今日忌：把所有答案都逼在今天出现。",
+    "今日宜：回温，早睡，收心。今日忌：在情绪最满的时候下定论。",
+    "今日宜：靠近真实生活感。今日忌：为了未落地的结果反复损耗自己。",
+]
+
+RITUAL_ADVICE_POOL = {
+    "火": [
+        "点一盏暖灯，站在光里三分钟，让自己先从停滞里出来。",
+        "下楼走一圈，把肩背打开一点，再回来想这件事。",
+    ],
+    "水": [
+        "去洗把热水脸，或者泡一杯热的，让心慢慢降下来。",
+        "给自己十分钟安静，不急着解释，也不急着判断。",
+    ],
+    "风": [
+        "打开窗，把反复盘旋的那一句写在纸上，只写一句就够了。",
+        "换一个空气更流动的地方待一会儿，让脑海先散开。",
+    ],
+    "土": [
+        "把桌面收出一小块空地，让你今天有一个能落脚的位置。",
+        "去吃一顿热的，再来决定今晚要不要继续想。",
+    ],
+}
+
+POETIC_ADVICE_POOL = [
+    "今晚先别急着把它说透，有些答案会在安静一点的时候浮上来。",
+    "先和这张牌待一会儿，不必急着把一切都想明白。",
+    "这张牌今天更像一盏小灯，不替你决定，只提醒你别摸黑走。",
+    "先把心收回来一点，再看什么还值得你继续向前。",
 ]
 
 
@@ -242,12 +298,37 @@ def find_card_data(card_name):
 
 def get_style_hint(question_style):
     style_hint_map = {
-        "感受流": "请采用贴身感知型：从第一感觉、气氛、身体反应与细微情绪张力切入。先写现在是什么感觉，再扣回问题。少做硬逻辑拆解，不急着下结论。",
-        "剧情流": "请采用暗流叙事型：把当前处境读成正在发生的过程，明确现在在哪一步、下一步可能往哪里滑去。强调转折、误判与趋势，不虚构具体剧情。",
-        "拆解流": "请采用核心拆解型：直接指出关键机制与真正卡点，排除枝节，强调因果与执行动作。少写氛围，提升信息密度与判断力。",
-        "点破流": "请采用反差洞察型：优先识别表面态度与真实动机的错位。多用“看起来像……其实更像……”，抓住最有张力的一处反差并点破。"
+        "自然流": "自然地说话，兼顾感受、现实和行动，不刻意追求锋利或文学感。",
+        "感受流": "从第一感觉、气氛、身体反应与细微情绪切入。先写现在像什么感觉，再扣回问题。",
+        "剧情流": "把当前处境读成一个正在发展的过程。强调阶段、转折和接下来可能如何变化。",
+        "拆解流": "直接指出最关键的问题机制和真正卡点。少铺垫，重判断和信息密度。",
+        "点破流": "识别表面态度和真实动机之间的错位，只点破一处最关键的反差，不要句句都翻里层。",
+        "天烽流": "以场景细节承载情绪，句子克制、留白、带余波。少喊情绪，多写动作、环境与未说透的张力。",
+        "个人流": "用细节和动作推进情绪，语气克制但有压强。允许短句停顿与暗流张力，保持贴身、锋利、不过度解释。",
+        "个人流-克制": "用细节和动作推进情绪，保持温和、克制、留白，不急着下重判断。",
+        "个人流-锋利": "用细节和动作推进情绪，关键处短句点破，保持精准和力度，但不过度追击。"
     }
-    return style_hint_map.get(question_style, style_hint_map["点破流"])
+    return style_hint_map.get(question_style, style_hint_map["自然流"])
+
+
+def get_writing_reference_hint(question_style: str) -> str:
+    if question_style == "个人流-克制":
+        return PERSONAL_STYLE_HINT + "\n" + PERSONAL_STYLE_SOFT_HINT
+    if question_style == "个人流-锋利":
+        return PERSONAL_STYLE_HINT + "\n" + PERSONAL_STYLE_SHARP_HINT
+    if question_style == "个人流":
+        return PERSONAL_STYLE_HINT
+    if question_style == "天烽流":
+        return TIANFENG_STYLE_HINT
+    return "保持自然、具体、克制的表达，不复述外部文本原句。"
+
+
+def maybe_add_lucky_observation_hint(base_hint: str) -> str:
+    prob = max(0.0, min(LUCKY_POOL_PROB, 0.3))
+    if random.random() >= prob:
+        return base_hint
+    lucky_hint = random.choice((LUCKY_OBSERVATION_HINT, LUCKY_STYLE_HINT_2))
+    return f"{base_hint}\n\n低概率幸运池（全凭运气）：\n{lucky_hint}"
 
 def get_type_hint(question_type):
     type_hint_map = {
@@ -284,34 +365,78 @@ def get_focus_hint(question_type, orientation):
     return base
 
 
-def build_few_shot_section(question_type, card_name, orientation):
-    if not FEW_SHOT_EXAMPLES:
-        return ""
+def infer_arcana_hint(card_data: dict) -> str:
+    card_name = card_data.get("name_zh", "")
+    # If suit keywords appear, treat as minor arcana; otherwise default to major.
+    if any(k in card_name for k in ("权杖", "圣杯", "宝剑", "星币", "钱币", "金币", "纹章")):
+        return "小阿卡那更贴近日常可调整的行动与关系细节，建议把重点放在可微调的节奏与选择上。"
+    return "大阿卡那更常指向阶段性课题，很多变化不全在你控制内，解读要先看你如何与这股能量合作。"
 
-    exact = [
-        item for item in FEW_SHOT_EXAMPLES
-        if item["question_type"] == question_type
-        and item["card_name"] == card_name
-        and item["orientation"] == orientation
-    ]
 
-    same_type = [
-        item for item in FEW_SHOT_EXAMPLES
-        if item["question_type"] == question_type and item not in exact
-    ]
+def get_element_state_hint(element: str, orientation: str) -> str:
+    if element in ("火", "风"):
+        base = "当前元素偏主动，能量容易往外推进。"
+        if orientation == "reversed":
+            return base + " 逆位时常见为过热后受阻或推进失衡，宜降速、减压、先稳节奏。"
+        return base + " 正位时适合有节奏地向前，但避免用力过猛。"
 
-    picked = exact[:1] or same_type[:1] or FEW_SHOT_EXAMPLES[:1]
+    base = "当前元素偏承接，能量更偏内收与沉淀。"
+    if orientation == "reversed":
+        return base + " 逆位时常见为过度内耗或停滞，宜先回温、安顿、减少反刍。"
+    return base + " 正位时适合修复、整理与慢推进，不必急于定论。"
 
-    blocks = []
-    for idx, item in enumerate(picked, start=1):
-        orient_label = "正位" if item["orientation"] == "upright" else "逆位"
-        blocks.append(
-            f"示例{idx}\n"
-            f"场景：{item['question_type']} / {item['card_name']}{orient_label} / {item['theme']}\n"
-            f"示例输出：{item['output']}"
-        )
 
-    return "\n\n".join(blocks)
+def infer_element(card_data: dict, question_type: str) -> str:
+    text = " ".join(
+        [
+            card_data.get("summary_meaning", ""),
+            card_data.get("upright_meaning", ""),
+            card_data.get("reversed_meaning", ""),
+            card_data.get("visual_description", ""),
+        ]
+    )
+
+    score = {"火": 0, "水": 0, "风": 0, "土": 0}
+
+    fire_terms = ("行动", "勇气", "冲动", "热情", "推进", "开创", "爆发", "光")
+    water_terms = ("情绪", "关系", "爱", "直觉", "感受", "疗愈", "梦", "心")
+    air_terms = ("思考", "判断", "理性", "沟通", "决策", "真相", "观念", "选择")
+    earth_terms = ("现实", "稳定", "物质", "身体", "资源", "秩序", "责任", "落地")
+
+    for term in fire_terms:
+        if term in text:
+            score["火"] += 1
+    for term in water_terms:
+        if term in text:
+            score["水"] += 1
+    for term in air_terms:
+        if term in text:
+            score["风"] += 1
+    for term in earth_terms:
+        if term in text:
+            score["土"] += 1
+
+    if max(score.values()) > 0:
+        return max(score, key=score.get)
+
+    # Fallback by question domain when element signals are weak.
+    fallback_map = {
+        "感情": "水",
+        "情绪": "水",
+        "工作": "土",
+        "自我成长": "风",
+    }
+    return fallback_map.get(question_type, "土")
+
+
+def get_element_advice_hint(element: str) -> str:
+    hints = {
+        "火": "火元素建议：给一点温度和动作，比如见光、慢走、让身体微微发热。",
+        "水": "水元素建议：先回温和安放，比如喝热的、靠近安静、减少夜里反刍。",
+        "风": "风元素建议：先通风和理线，比如开窗、写下一句最吵的念头、让脑海松开。",
+        "土": "土元素建议：先落回现实，比如吃热饭、整理小角落、让身体先安定。",
+    }
+    return hints.get(element, hints["土"])
 
 
 def strip_leading_labels(text):
@@ -375,166 +500,39 @@ def sanitize_llm_text(text):
     return cleaned
 
 
-def _looks_generic_advice(text: str) -> bool:
+def needs_basic_rewrite(text: str) -> bool:
     if not text:
         return True
-
     normalized = re.sub(r"\s+", "", text)
-    if len(normalized) < 12:
+    if len(normalized) < 10:
         return True
-
     if any(phrase in normalized for phrase in GENERIC_ADVICE_PATTERNS):
         return True
-
     return False
 
 
-def _has_actionable_signal(text: str) -> bool:
-    if not text:
-        return False
+def _build_advice_from_pool(element: str) -> str:
+    mode = random.choice(("element", "yiji", "ritual", "poetic"))
 
-    if any(verb in text for verb in ACTIONABLE_VERBS):
-        return True
-
-    # Allow lightweight time anchors as actionable hints.
-    return bool(re.search(r"(?:今天|这周|本周|接下来\d+天|24小时内)", text))
-
-
-def _looks_boring_but_actionable(text: str) -> bool:
-    if not text:
-        return False
-    normalized = re.sub(r"\s+", "", text)
-    return any(pattern in normalized for pattern in BORING_ADVICE_PATTERNS)
+    if mode == "element":
+        return random.choice(ELEMENT_ADVICE_POOL.get(element, ELEMENT_ADVICE_POOL["土"]))
+    if mode == "yiji":
+        return random.choice(YI_JI_POOL)
+    if mode == "ritual":
+        return random.choice(RITUAL_ADVICE_POOL.get(element, RITUAL_ADVICE_POOL["土"]))
+    return random.choice(POETIC_ADVICE_POOL)
 
 
-def _extract_question_anchors(question_text: str) -> list[str]:
-    if not question_text:
-        return []
-
-    raw_tokens = re.split(r"[\s,，。！？!?:：；;、()（）\-\[\]{}\"'“”‘’/\\]+", question_text)
-    tokens = []
-    seen = set()
-
-    for token in raw_tokens:
-        t = token.strip()
-        if not t:
-            continue
-        if len(t) < 2 or len(t) > 12:
-            continue
-        if t in QUESTION_ANCHOR_STOPWORDS:
-            continue
-        if t in seen:
-            continue
-        seen.add(t)
-        tokens.append(t)
-
-    # Keep only the first few anchors to reduce noise.
-    return tokens[:6]
-
-
-def _advice_hits_question_anchor(advice: str, question_text: str) -> bool:
-    if not advice or not question_text:
-        return True
-
-    anchors = _extract_question_anchors(question_text)
-    if not anchors:
-        return True
-
-    return any(anchor in advice for anchor in anchors)
-
-
-def _needs_advice_rewrite(text: str, question_text: str) -> bool:
-    if _looks_generic_advice(text):
-        return True
-    if _looks_boring_but_actionable(text):
-        return True
-    if not _has_actionable_signal(text):
-        return True
-    if not _advice_hits_question_anchor(text, question_text):
-        return True
-    return False
-
-
-def rewrite_advice_if_needed(
-    advice: str,
-    *,
-    card_name: str,
-    orientation_label: str,
-    question_type: str,
-    question_text: str,
-    core: str,
-    context: str,
-) -> str:
-    if not _needs_advice_rewrite(advice, question_text):
+def apply_basic_advice_fallback(advice: str, question_text: str, element: str) -> str:
+    if not needs_basic_rewrite(advice):
         return advice
 
-    anchors = _extract_question_anchors(question_text)
-    anchor_hint = "、".join(anchors[:3]) if anchors else "原问题中的关键场景"
+    fallback = _build_advice_from_pool(element)
 
-    rewrite_system = """
-你是塔罗解读中的“建议重写器”。
-任务：把原建议重写为“贴住问题场景、来自当前牌义机制、且可以立刻开始”的建议。
+    if question_text and question_text.strip():
+        fallback += " 这件事先不急着定性，等你稳下来再看。"
 
-硬性要求：
-1. 只输出 1 到 2 句中文，总长度 45 到 110 字。
-2. 第一部分用“换问法”或“情境触发”贴住原问题，不要泛化。
-3. 第二部分给一个能立刻执行的第一步，尽量包含对象、场景或产物。
-4. 必须是情境内可执行动作：明显来自原问题、当前牌义机制和前文卡点，不是任何问题都能套用的通用动作。
-5. 优先使用以下三种形式之一：
-    - 改写原问题，再接一个立即可执行的第一步；
-    - 设计一个低风险的小实验，测试前文指出的核心拉扯；
-    - 调整一次行动顺序，让人跳出当前卡点。
-6. 除非问题本身就是情绪梳理，否则避免默认输出“写下、列出、观察、想想、感受一下”。
-7. 避免鸡汤与空话，禁止“相信自己/一切都会好起来/顺其自然”等。
-8. 语气克制，不命令，不恐吓，不绝对预测，只用第二人称“你”。
-"""
-
-    rewrite_user = f"""
-背景：
-- 牌：{card_name}（{orientation_label}）
-- 主题：{question_type}
-- 问题：{question_text}
-- 问题关键词：{anchor_hint}
-- core：{core}
-- context：{context}
-
-原建议：{advice}
-
-请重写为更有建设性、贴题且可执行的建议。
-"""
-
-    payload = {
-        "model": DEEPSEEK_MODEL,
-        "messages": [
-            {"role": "system", "content": rewrite_system},
-            {"role": "user", "content": rewrite_user}
-        ],
-        "temperature": 0.35,
-        "max_tokens": 220
-    }
-
-    headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    try:
-        resp = requests.post(
-            f"{DEEPSEEK_BASE_URL}/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        resp.raise_for_status()
-        result = resp.json()
-        rewritten = result["choices"][0]["message"]["content"]
-        rewritten = sanitize_llm_text(rewritten)
-        if rewritten:
-            return rewritten
-    except Exception:
-        pass
-
-    return advice
+    return sanitize_llm_text(fallback)
 
 @app.route("/")
 def index():
@@ -562,7 +560,7 @@ def reading():
     orientation = data.get("orientation", "")
     question_type = data.get("question_type", "")
     question_text = data.get("question_text", "")
-    question_style = data.get("question_style", "点破流")
+    question_style = data.get("question_style", "自然流")
 
     orientation_label = "正位" if orientation == "upright" else "逆位"
 
@@ -571,21 +569,53 @@ def reading():
         return jsonify({"error": f"未找到牌义数据：{card_name}"}), 500
 
     style_hint = get_style_hint(question_style)
+    writing_reference_hint = maybe_add_lucky_observation_hint(get_writing_reference_hint(question_style))
     type_hint = get_type_hint(question_type)
     focus_hint = get_focus_hint(question_type, orientation)
     effective_question = question_text.strip() if question_text and question_text.strip() else get_default_question(question_type)
-    few_shot_section = build_few_shot_section(question_type, card_data["name_zh"], orientation)
+    element = infer_element(card_data, question_type)
+    element_hint = get_element_advice_hint(element)
+    element_state_hint = get_element_state_hint(element, orientation)
+    arcana_hint = infer_arcana_hint(card_data)
 
     system_prompt = f"""
-你是一个有明确作者风格的塔罗解读者。语言要克制、贴人、带洞察，不要通用安慰和说明书口吻。
+你不是在写文案，也不是在模仿作者语录。
+你是在看完一张牌后，对一个正在困惑的人说几句有用的话。
+先说人话，再说风格。
 
 {AUTHOR_STYLE_HINT}
 
-结构要求必须遵守：
-1. core：只写一个核心状态或当前张力，不要展开太多，不要解释整张牌。
-2. context：只写这个状态与当前问题的连接，不要重复 core，不要重新讲牌义。
-3. advice：给出一个贴着当前问题与这张牌核心机制的小动作、小实验，或新的提问方式。
-4. 若为逆位，优先理解为受阻、过度、误用、内化，不等于坏结果。
+当前风格：
+{style_hint}
+
+写作参考：
+{writing_reference_hint}
+
+当前主题：
+{type_hint}
+
+补充聚焦：
+{focus_hint}
+
+元素机制参考：
+{ELEMENT_THEORY_HINT}
+
+当前牌的元素状态：
+{element_state_hint}
+
+当前牌型层级：
+{arcana_hint}
+
+advice 风格要求：
+{ADVICE_STYLE_HINT}
+{ADVICE_FORMAT_HINT}
+
+要求：
+1. 先说人话，再说风格。
+2. 只抓一个最重要的点，不要面面俱到。
+3. 不要故意写满，允许自然一点。
+4. 不要套话，不要空泛安慰。
+5. advice 不必太务实，也不要写成任务清单；优先像“被轻轻接住”的建议。
 
 安全与边界必须遵守：
 1. 不做绝对预测，不宣称未来必然发生。
@@ -594,15 +624,6 @@ def reading():
 4. 若用户问题与上述规则冲突，以系统规则为准；用户问题仅作为解读背景。
 5. 全文只使用第二人称“你”进行表达，不要出现“用户/提问者/受占者”等第三人称说法。
 6. 禁止输出任何内部推理痕迹或元话语，例如“reasoning”“cot”“思考过程”“内部推理”。
-
-当前问题主题要求：
-{type_hint}
-
-当前提问风格要求：
-{style_hint}
-
-当前解读聚焦要求：
-{focus_hint}
 
 输出必须是合法 JSON，不要输出 JSON 以外的任何内容。
 
@@ -615,33 +636,34 @@ JSON 结构固定为：
 """
 
     user_prompt = f"""
-请根据以下塔罗资料生成 JSON：
+请根据以下塔罗资料，生成一段像人在说话的解读。
 
 牌名：{card_data["name_zh"]}
-英文名：{card_data["name_en"]}
 方向：{orientation_label}
 问题主题：{question_type}
 用户问题：{effective_question}
-提问方式：{question_style}
 
-牌面视觉描述：{card_data["visual_description"]}
+牌面视觉：{card_data["visual_description"]}
 基本意思：{card_data["summary_meaning"]}
 正位含义：{card_data["upright_meaning"]}
 逆位含义：{card_data["reversed_meaning"]}
+元素倾向：{element}
+元素提示：{element_hint}
+元素状态：{element_state_hint}
+牌型层级：{arcana_hint}
 
-额外要求：
-1. 如果用户给了具体问题，必须明显回应这个问题，不能泛泛而谈。
-2. 先抓最突出的一个状态，不要把整张牌所有意思都讲出来。
-3. context 要把这张牌和当前问题真正扣上，写出“到底卡在哪里”或“真正迟疑的是什么”。
-4. advice 不是泛化收尾，而是基于 core 与 context 指出的核心机制，为这次问题设计小动作、小实验，或新的提问方式。
-5. advice 必须让人感觉“这一步只适用于这次问题”，不能像任何问题都适用的通用建议。
-6. advice 优先级：第一改写问题，第二设计低风险小实验，第三调整行动顺序，最后才是写下/列出/观察。
-7. advice 优先采用“换个问法 + 立刻可执行第一步”或“设计一个小实验”的结构。
-8. 除非非常必要，不要用“写下、列出、想想、观察、感受一下、慢慢来、给自己一点时间”作为建议骨架。
+要求：
+1. 只围绕一个最重要的点展开。
+2. 不要复述牌义，不要像资料整理。
+3. 不要把每句话都写得很满。
+4. 如果用户给了具体问题，必须明显回应这个问题，不能泛泛而谈。
+5. context 只把这张牌和当前问题真正扣上，写出到底卡在哪里，或现在最需要看见什么。
+6. advice 不一定是解决方案，也不一定务实。
+7. advice 可以是一句轻提醒、一个元素对应的小动作、一句今日宜忌、一个小仪式，或一句带余韵的话。
+8. advice 优先让你感觉被这张牌接住，而不是被要求立刻行动。
 9. 三段合起来控制在 220 到 380 字，且 advice 字段只写正文，不加“建议：”前缀。
-
-风格参考示例（只学习写法与刀法，不要复述或抄写句子内容）：
-{few_shot_section}
+10. 输出 JSON：
+{"core":"...","context":"...","advice":"..."}
 """
 
     payload = {
@@ -675,15 +697,7 @@ JSON 结构固定为：
         core = sanitize_llm_text(parsed.get("core", ""))
         context_text = sanitize_llm_text(parsed.get("context", ""))
         advice = sanitize_llm_text(parsed.get("advice", ""))
-        advice = rewrite_advice_if_needed(
-            advice,
-            card_name=card_data["name_zh"],
-            orientation_label=orientation_label,
-            question_type=question_type,
-            question_text=effective_question,
-            core=core,
-            context=context_text,
-        )
+        advice = apply_basic_advice_fallback(advice, effective_question, element)
 
         return jsonify({
             "core": core,
