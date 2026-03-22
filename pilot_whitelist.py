@@ -8,7 +8,7 @@ from typing import Dict, List
 
 _DEFAULT_WHITELIST_JSON = "[]"
 _NAME_PATTERN = re.compile(r"^[a-z]+$")
-_BIRTH_YM_PATTERN = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+_BIRTH_DATE_PATTERN = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")
 
 
 def normalize_name_pinyin(name: str) -> str:
@@ -17,8 +17,8 @@ def normalize_name_pinyin(name: str) -> str:
     return "".join((name or "").strip().lower().split())
 
 
-def is_valid_birth_year_month(text: str) -> bool:
-    return bool(_BIRTH_YM_PATTERN.match((text or "").strip()))
+def is_valid_birth_date(text: str) -> bool:
+    return bool(_BIRTH_DATE_PATTERN.match((text or "").strip()))
 
 
 def _parse_whitelist_payload(raw: str):
@@ -63,7 +63,7 @@ def _load_whitelist() -> List[Dict]:
         active = bool(item.get("is_active", True))
         if not name or not _NAME_PATTERN.match(name):
             continue
-        if not is_valid_birth_year_month(birth):
+        if not is_valid_birth_date(birth):
             continue
         rows.append({
             "name_pinyin": name,
@@ -82,7 +82,7 @@ def validate_pilot_user(name_pinyin: str, birth_year_month: str) -> bool:
     birth = (birth_year_month or "").strip()
     if not name or not _NAME_PATTERN.match(name):
         return False
-    if not is_valid_birth_year_month(birth):
+    if not is_valid_birth_date(birth):
         return False
 
     for item in _load_whitelist():
