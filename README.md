@@ -29,13 +29,19 @@ Live Demo: https://tarot-local-test.onrender.com
 - 正位 / 逆位机制
 - 固定牌意展示（视觉、基础含义、正逆位含义）
 - 基于问题类型与补充问题的生成式解读
+- 多风格解读预设（旧版作者风格 / 柔和版 / 锐利版 / 诗性版）
 - 动态 placeholder 与折叠式提问说明
 - 洗牌 -> 三选一抽牌 -> 解读的单路径交互
 - 等待层体验：
   - 三阶段状态文案切换
   - 呼吸式进度条
   - 与当前牌相关的碎片知识轮播
-- 单会话抽牌上限（当前为 10 次）
+- 访问分层能力：普通体验 / 邀请码体验 / 先行者 / 管理员
+- 普通模式单会话 1 次抽牌；激活后可完整体验
+- 牌灵模式（围绕当前 reading 的 10 分钟延伸追问）
+- 历史记录（最近问题 + 上锁归档）
+- 邀请码管理（创建、停用、次数限制）
+- 白名单认证与管理员入口
 - Render 在线部署
 
 ## 交互流程
@@ -52,18 +58,26 @@ Live Demo: https://tarot-local-test.onrender.com
 
 - Backend: Python + Flask
 - Frontend: HTML + CSS + JavaScript
-- Data: JSON（结构化牌义）
-- LLM API: DeepSeek
+- Data: JSON（结构化牌义 + 访问会话与邀请码存储）
+- LLM API: DeepSeek（单抽解读）+ Gemini（牌灵对话）
 - Deployment: Render
 
 ## 项目结构
 
 ```text
 tarot-local-test/
+├── access_control.py     # 访问角色与能力定义
+├── storage.py            # 本地 JSON 存储层（邀请码/会话/风格/历史）
+├── pilot_whitelist.py    # 白名单与管理员认证
+├── invite_codes.py       # 邀请码读写与消费逻辑
+├── access_data.json      # 访问相关数据文件
+├── card_spirit_prompt.py # 牌灵系统提示词与用户提示构建
+├── card_spirit_session.py# 牌灵会话管理
+├── gemini_client.py      # Gemini 客户端封装
 ├── app.py                # Flask 后端与 API
 ├── index.html            # 页面结构
 ├── style.css             # 页面样式
-├── script.js             # 前端交互、抽牌逻辑、等待层、API 请求
+├── script.js             # 前端交互、访问状态、抽牌逻辑、API 请求
 ├── cards_data.json       # 22 张大阿卡纳结构化牌义
 ├── requirements.txt      # Python 依赖
 └── assets/               # 静态资源（牌面图片等）
@@ -85,7 +99,20 @@ pip install -r requirements.txt
 
 ```bash
 export DEEPSEEK_API_KEY=your_api_key_here
+export GEMINI_API_KEY=your_api_key_here
+
+# 可选：管理员与白名单能力（先行版）
+export PILOT_ADMIN_CODE=your_admin_code
+export PILOT_ADMIN_BIRTH_DATE=YYYY-MM-DD
+export PILOT_WHITELIST_JSON='[{"name_pinyin":"zhangsan","birth_year_month":"1990-05","is_active":true}]'
 ```
+
+说明：
+
+- 如果你本地没有配置 DeepSeek 或 Gemini，但 Render 上已配置，对线上部署不影响。
+- 本地仅在调用对应功能时才需要对应 API Key：
+  - 单抽解读依赖 DEEPSEEK_API_KEY
+  - 牌灵模式依赖 GEMINI_API_KEY
 
 3) 启动服务（开发）
 
@@ -103,6 +130,14 @@ gunicorn app:app --bind 0.0.0.0:10000
 
 当前默认部署在 Render。
 如果 Render 已配置自动部署 main 分支，推送后会自动触发新版本发布。
+
+建议在 Render 的 Environment 中配置以下变量：
+
+- DEEPSEEK_API_KEY
+- GEMINI_API_KEY
+- PILOT_ADMIN_CODE（可选）
+- PILOT_ADMIN_BIRTH_DATE（可选）
+- PILOT_WHITELIST_JSON（可选）
 
 ## 使用边界与免责声明
 
