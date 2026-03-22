@@ -70,7 +70,7 @@ tarot-local-test/
 ├── storage.py            # 本地 JSON 存储层（邀请码/会话/风格/历史）
 ├── pilot_whitelist.py    # 白名单与管理员认证
 ├── invite_codes.py       # 邀请码读写与消费逻辑
-├── access_data.json      # 访问相关数据文件
+├── access_data.example.json # 访问数据模板（示例，非真实数据）
 ├── card_spirit_prompt.py # 牌灵系统提示词与用户提示构建
 ├── card_spirit_session.py# 牌灵会话管理
 ├── gemini_client.py      # Gemini 客户端封装
@@ -138,6 +138,11 @@ gunicorn app:app --bind 0.0.0.0:10000
 - PILOT_ADMIN_CODE（可选）
 - PILOT_ADMIN_BIRTH_DATE（可选）
 - PILOT_WHITELIST_JSON（可选）
+
+隐私说明：
+
+- access_data.json 为运行时本地数据文件，已加入 .gitignore，不应提交到仓库。
+- 仓库仅保留 access_data.example.json 作为结构模板。
 
 ## 使用边界与免责声明
 
