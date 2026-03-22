@@ -937,7 +937,7 @@ function updateUI(card, aiReading, questionText, questionType) {
 
 放回你的问题里：${aiReading.context}
 
-宇宙想对你说：${aiReading.advice}`;
+这张牌想说的是：${aiReading.advice}`;
 
   document.getElementById("cardReading").textContent =
     buildFixedMeaning(card) + "\n\n" + llmMeaning;
