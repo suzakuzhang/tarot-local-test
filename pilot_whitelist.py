@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import os
 import re
@@ -20,14 +21,38 @@ def is_valid_birth_year_month(text: str) -> bool:
     return bool(_BIRTH_YM_PATTERN.match((text or "").strip()))
 
 
+def _parse_whitelist_payload(raw: str):
+    text = (raw or "").strip()
+    if not text:
+        return []
+
+    # 1) Preferred path: strict JSON list.
+    try:
+        parsed = json.loads(text)
+        if isinstance(parsed, list):
+            return parsed
+        # Some platforms accidentally store a JSON string of a JSON list.
+        if isinstance(parsed, str):
+            nested = json.loads(parsed)
+            if isinstance(nested, list):
+                return nested
+    except Exception:
+        pass
+
+    # 2) Fallback for single-quoted payloads pasted in env vars.
+    try:
+        parsed = ast.literal_eval(text)
+        if isinstance(parsed, list):
+            return parsed
+    except Exception:
+        pass
+
+    return []
+
+
 def _load_whitelist() -> List[Dict]:
     raw = os.getenv("PILOT_WHITELIST_JSON", _DEFAULT_WHITELIST_JSON)
-    try:
-        data = json.loads(raw)
-    except Exception:
-        return []
-    if not isinstance(data, list):
-        return []
+    data = _parse_whitelist_payload(raw)
 
     rows = []
     for item in data:
