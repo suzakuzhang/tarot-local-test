@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
@@ -6,7 +8,41 @@ import pathlib
 import re
 import random
 import requests
-from invite_codes import validate_invite_code
+from access_control import (
+    ACCESS_ADMIN_CODE,
+    ACCESS_INVITE_CODE,
+    ACCESS_NORMAL,
+    ACCESS_WHITELIST,
+    ADMIN_ONLY_ROLES,
+    HISTORY_ALLOWED_ROLES,
+    INVITE_CODE_CREATE_ALLOWED_ROLES,
+    ROLE_ADMIN,
+    ROLE_INVITE,
+    ROLE_NORMAL,
+    ROLE_PILOT,
+    SPIRIT_ALLOWED_ROLES,
+    STYLE_ALLOWED_ROLES,
+    get_capabilities,
+)
+from invite_codes import (
+    consume_invite_code,
+    create_invite_code,
+    list_invite_code_entries,
+    set_invite_code_active,
+)
+from pilot_whitelist import list_whitelist, validate_admin_user, validate_pilot_user
+from storage import (
+    add_history_record,
+    count_invite_codes_created_today,
+    create_access_session,
+    get_access_session,
+    get_style_profile,
+    list_history_records,
+    save_style_profile,
+    set_history_lock,
+)
+
+PILOT_DAILY_INVITE_CODE_LIMIT = 3
 from card_spirit_session import card_spirit_sessions
 from card_spirit_prompt import (
     build_spirit_system_prompt,
@@ -45,6 +81,11 @@ META_LEAK_PATTERNS = (
 
 THIRD_PERSON_TERMS = ("用户", "提问者", "受占者")
 
+META_TONE_PREFIX_PATTERNS = (
+    r"^(?:根据你的问题|根据你这个问题|从牌面来看|从牌面上看|结合你的问题(?:来看)?)[，。；:：\s]*",
+    r"^(?:这张牌(?:通常|往往)?意味着|这张牌代表|牌面(?:显示|提示|告诉我们))[，。；:：\s]*",
+)
+
 GENERIC_ADVICE_PATTERNS = (
     "相信自己",
     "一切都会好起来",
@@ -74,26 +115,35 @@ DEFAULT_REVERSED_FACTS = [
 ]
 
 AUTHOR_STYLE_HINT = """
-请保留一种清醒、贴近、克制的观察感。
-比起解释表面情绪，更关注真正起作用的关系机制、心理机制或拖延机制。
-不要故意华丽，不要句句点破，不要写成说明书。
-像一个很会看人、但不卖弄的人在说话。
+请使用有明确作者性的塔罗语言，而不是通用安慰或牌义说明书口吻。
+
+语言风格要求：
+1. 像在对一个具体的人做近距离、冷静、克制的观察。
+2. 不满足于描述表面情绪，要优先指出表象之下真正起作用的机制。
+3. 多写双层状态与反差，例如：明明已经动摇，却还在维持；表面平静，底下失衡；像是在犹豫，反而更像在拖延承认。
+4. 允许一点锋利的判断，但锋利来自点破与看穿，不来自攻击、羞辱或恐吓。
+5. 优先写细小裂缝、压抑、拉扯、留有余地、防御与失衡，不要直接贴情绪标签。
+6. 保持留白，多用“更像是在……”“未必是……反而更像……”这类表达，不要把一切解释死。
+7. 语言可以有叙述感，但不要写成完整剧情，不要堆砌修辞，不要为了文学感牺牲清晰度。
+8. core 先写状态，context 再扣问题，advice 最后只给一个轻推式的小动作。
+9. 不要空泛鸡汤，不要使用“相信自己”“一切都会好起来”之类通用鼓励。
+10. 最终效果应像：你看起来在经历一件事，但这张牌更像在指出，真正困住你的其实是另一件事。
 """
 
 ADVICE_STYLE_HINT = """
-advice 不必太务实，也不必像任务建议。
-它可以是一句带有画面感的轻提醒，一个和这张牌气质相符的小动作，一个从元素/五行出发的日常建议，或一句今日宜忌。
-优先给出能安放情绪、调整状态、让人愿意去做的小建议，而不是逼你立刻解决问题。
+advice 可以不聚焦任务，不必强调可执行步骤。
+它可以是结合牌面联想给出的整体寄语，也可以是“宇宙想对你说”的一句话，或一段以 well-being 为中心的抒发。
+优先让你被理解、被安放、被轻轻托住，而不是被要求立刻行动。
 可以诗意，但不要悬浮；可以温柔，但不要空泛。
-尽量让 advice 像“这张牌今天陪你怎么过”，而不是“你接下来该完成什么”。
+尽量让 advice 像“你此刻最需要听见的话”，而不是“你接下来该完成什么”。
 """
 
 ADVICE_FORMAT_HINT = """
 advice 请优先从以下四种形式中选择最合适的一种：
-1. 元素建议：根据火、水、风、土给一个身体或环境上的小动作。
-2. 宜忌提醒：给一句适合今天的“宜/忌”。
-3. 轻仪式：给一个不费力、但有象征感的小动作。
-4. 余韵句：给一句能陪你停一会儿的话。
+1. 宇宙寄语：给一段整体性的“宇宙想对你说”。
+2. 余韵句：给一句能陪你停一会儿的话。
+3. 元素抚慰：根据火、水、风、土给一个安放状态的方向，不一定是动作指令。
+4. 宜忌提醒：给一句适合今天的“宜/忌”。
 不要把 advice 写成任务清单，也不要像效率建议。
 """
 
@@ -158,6 +208,14 @@ ELEMENT_THEORY_HINT = """
 2. 火与风偏主动，水与土偏被动。
 3. 能量观感上：火火/风风易过分活跃，水水/土土易过分消极；火水与风土常形成中和或僵局感。
 4. 解读时优先先看能量流动（增强、受阻、过热、过冷），再落回事件层。
+"""
+
+CARD_SURFACE_INTEGRATION_HINT = """
+牌面整合规则（参考《塔罗和元素的联系及用法》《十五种方法助你读牌中整合牌意》的方法论）：
+1. 先从牌面可见信息出发：人物姿态、视线方向、动作趋势、场景气氛、明暗冷暖。
+2. 不孤立解释单张“定义”，而是从牌面细节推断当下能量如何流动：主动/被动、推进/停滞、聚拢/分散。
+3. 元素只作为能量语言：火风偏主动，水土偏承接；先判断动力关系，再落到问题语境。
+4. 建议与寄语必须回扣牌面，不做脱离牌面的泛安慰。
 """
 
 ELEMENT_ADVICE_POOL = {
@@ -306,6 +364,10 @@ def find_card_data(card_name):
 
 def get_style_hint(question_style):
     style_hint_map = {
+        "旧版作者风格": "保持冷静、克制、近距离观察感，优先点出机制与反差，减少教程腔与空泛安慰。",
+        "柔和版": "语气更柔和，先安放情绪，再轻推一层洞察；保持具体，不说教。",
+        "锐利版": "判断更短更准，直指关键错位与机制；保留分寸，不攻击。",
+        "诗性版": "允许轻微诗性和余韵，但必须具体、可感，不悬浮。",
         "自然流": "自然地说话，兼顾感受、现实和行动，不刻意追求锋利或文学感。",
         "感受流": "从第一感觉、气氛、身体反应与细微情绪切入。先写现在像什么感觉，再扣回问题。",
         "剧情流": "把当前处境读成一个正在发展的过程。强调阶段、转折和接下来可能如何变化。",
@@ -320,6 +382,14 @@ def get_style_hint(question_style):
 
 
 def get_writing_reference_hint(question_style: str) -> str:
+    if question_style == "旧版作者风格":
+        return PERSONAL_STYLE_HINT
+    if question_style == "柔和版":
+        return PERSONAL_STYLE_HINT + "\n" + PERSONAL_STYLE_SOFT_HINT
+    if question_style == "锐利版":
+        return PERSONAL_STYLE_HINT + "\n" + PERSONAL_STYLE_SHARP_HINT
+    if question_style == "诗性版":
+        return TIANFENG_STYLE_HINT
     if question_style == "个人流-克制":
         return PERSONAL_STYLE_HINT + "\n" + PERSONAL_STYLE_SOFT_HINT
     if question_style == "个人流-锋利":
@@ -491,6 +561,8 @@ def sanitize_llm_text(text):
 
     cleaned = re.sub(r"^(?:如果用户[^，。；:：]{0,50}[，。；:：]\s*)+", "", cleaned)
     cleaned = re.sub(r"^(?:用户会觉得|用户可能会|如果用户正经历|对于用户而言|作为用户)\s*[:：，]?\s*", "", cleaned)
+    for pattern in META_TONE_PREFIX_PATTERNS:
+        cleaned = re.sub(pattern, "", cleaned)
 
     # Keep only second-person tarot healer tone by dropping obvious third-person narration fragments.
     parts = re.split(r"(?<=[。！？!?])", cleaned)
@@ -500,6 +572,8 @@ def sanitize_llm_text(text):
         if not line:
             continue
         if any(term in line for term in THIRD_PERSON_TERMS):
+            continue
+        if any(re.match(pattern, line) for pattern in META_TONE_PREFIX_PATTERNS):
             continue
         kept.append(line)
     cleaned = "".join(kept).strip() or cleaned
@@ -531,11 +605,25 @@ def _build_advice_from_pool(element: str) -> str:
     return random.choice(POETIC_ADVICE_POOL)
 
 
-def apply_basic_advice_fallback(advice: str, question_text: str, element: str) -> str:
+def _extract_visual_anchor(visual_description: str) -> str:
+    if not visual_description:
+        return "牌面里那种微妙的停顿"
+    first = re.split(r"[。！？!?；;]", visual_description.strip())[0].strip()
+    if not first:
+        return "牌面里那种微妙的停顿"
+    return first[:48]
+
+
+def apply_basic_advice_fallback(advice: str, question_text: str, element: str, card_data: dict, orientation: str) -> str:
     if not needs_basic_rewrite(advice):
         return advice
 
     fallback = _build_advice_from_pool(element)
+    card_name = (card_data or {}).get("name_zh", "这张牌")
+    visual_anchor = _extract_visual_anchor((card_data or {}).get("visual_description", ""))
+    orientation_label = "正位" if orientation == "upright" else "逆位"
+
+    fallback = f"{card_name}{orientation_label}里“{visual_anchor}”这一笔，像在对你说：{fallback}"
 
     if question_text and question_text.strip():
         fallback += " 这件事先不急着定性，等你稳下来再看。"
@@ -553,6 +641,277 @@ def _default_spirit_opening(card_name: str, orientation: str, question: str) -> 
         f"我会继续围绕{card_name}（{orientation_label}）和你刚才的问题走。"
         f"你先说说：当你再次看向‘{question}’时，心里最先紧起来的是哪一处？"
     )
+
+
+def _build_spirit_card_profile(card_data: dict | None) -> str:
+    if not card_data:
+        return ""
+    visual = (card_data.get("visual_description") or "").strip()
+    summary = (card_data.get("summary_meaning") or "").strip()
+    upright = (card_data.get("upright_meaning") or "").strip()
+    reversed_meaning = (card_data.get("reversed_meaning") or "").strip()
+    return (
+        f"牌面视觉：{visual}；"
+        f"基本意思：{summary}；"
+        f"正位含义：{upright}；"
+        f"逆位含义：{reversed_meaning}"
+    )
+
+
+def _extract_access_token(data: dict | None = None) -> str:
+    payload = data or {}
+    token = (payload.get("access_token") or "").strip()
+    if token:
+        return token
+    return (request.headers.get("X-Access-Token") or "").strip()
+
+
+def _get_access_session(data: dict | None = None) -> dict | None:
+    token = _extract_access_token(data)
+    if not token:
+        return None
+    return get_access_session(token)
+
+
+def _current_role(data: dict | None = None) -> str:
+    session = _get_access_session(data)
+    if not session:
+        return ROLE_NORMAL
+    return (session.get("role") or ROLE_NORMAL).strip() or ROLE_NORMAL
+
+
+def _require_role(session: dict | None, allowed_roles: set[str]):
+    if not session:
+        return jsonify({"error": "需要先激活先行版", "code": "AUTH_REQUIRED"}), 403
+    role = (session.get("role") or ROLE_NORMAL).strip() or ROLE_NORMAL
+    if role not in allowed_roles:
+        return jsonify({"error": "当前角色无权限", "role": role, "code": "FORBIDDEN"}), 403
+    return None
+
+
+def _serialize_access_session(row: dict) -> dict:
+    role = (row.get("role") or ROLE_NORMAL).strip() or ROLE_NORMAL
+    return {
+        "accessToken": row.get("token", ""),
+        "role": role,
+        "accessType": row.get("access_type", ACCESS_NORMAL),
+        "activated": bool(row.get("activated", False)),
+        "userId": row.get("user_id", ""),
+        "userName": row.get("user_name", ""),
+        "birthYearMonth": row.get("birth_year_month", ""),
+        "capabilities": get_capabilities(role),
+        "expiresAt": row.get("expires_at", ""),
+    }
+
+
+@app.route("/api/access/activate", methods=["POST"])
+def activate_access():
+    data = request.get_json(force=True)
+    mode = (data.get("mode") or "").strip()
+
+    if mode == "whitelist":
+        name = (data.get("name_pinyin") or "").strip()
+        birth = (data.get("birth_year_month") or "").strip()
+        if not validate_pilot_user(name, birth):
+            return jsonify({"error": "白名单认证失败"}), 403
+        row = create_access_session({
+            "role": ROLE_PILOT,
+            "access_type": ACCESS_WHITELIST,
+            "activated": True,
+            "user_id": f"pilot:{name}:{birth}",
+            "user_name": name,
+            "birth_year_month": birth,
+        })
+        return jsonify(_serialize_access_session(row))
+
+    if mode == "invite":
+        code = (data.get("invite_code") or "").strip()
+        consumed = consume_invite_code(code)
+        if not consumed:
+            return jsonify({"error": "邀请码无效或已失效"}), 403
+        user_id = f"invite:{consumed.get('code')}:{consumed.get('used_count')}"
+        row = create_access_session({
+            "role": ROLE_INVITE,
+            "access_type": ACCESS_INVITE_CODE,
+            "activated": True,
+            "user_id": user_id,
+            "user_name": "",
+            "birth_year_month": "",
+        })
+        payload = _serialize_access_session(row)
+        payload["inviteUsage"] = {
+            "code": consumed.get("code"),
+            "usedCount": consumed.get("used_count", 0),
+            "maxUses": consumed.get("max_uses", 10),
+            "isActive": bool(consumed.get("is_active", True)),
+        }
+        return jsonify(payload)
+
+    if mode == "admin":
+        admin_code = (data.get("admin_code") or "").strip()
+        birth_date = (data.get("birth_date") or "").strip()
+        if not validate_admin_user(admin_code, birth_date):
+            return jsonify({"error": "管理员认证失败"}), 403
+        row = create_access_session({
+            "role": ROLE_ADMIN,
+            "access_type": ACCESS_ADMIN_CODE,
+            "activated": True,
+            "user_id": "admin:root",
+            "user_name": "admin",
+            "birth_year_month": "",
+        })
+        return jsonify(_serialize_access_session(row))
+
+    return jsonify({"error": "未知激活模式"}), 400
+
+
+@app.route("/api/access/status", methods=["GET"])
+def access_status():
+    token = (request.args.get("access_token") or request.headers.get("X-Access-Token") or "").strip()
+    if not token:
+        return jsonify({
+            "role": ROLE_NORMAL,
+            "accessType": ACCESS_NORMAL,
+            "activated": False,
+            "capabilities": get_capabilities(ROLE_NORMAL),
+        })
+
+    session = get_access_session(token)
+    if not session:
+        return jsonify({
+            "role": ROLE_NORMAL,
+            "accessType": ACCESS_NORMAL,
+            "activated": False,
+            "capabilities": get_capabilities(ROLE_NORMAL),
+        })
+    return jsonify(_serialize_access_session(session))
+
+
+@app.route("/api/style-profile", methods=["GET"])
+def get_user_style_profile():
+    session = _get_access_session()
+    blocked = _require_role(session, STYLE_ALLOWED_ROLES)
+    if blocked:
+        return blocked
+
+    profile = get_style_profile(session.get("user_id", "")) or {
+        "user_id": session.get("user_id", ""),
+        "role": session.get("role", ROLE_NORMAL),
+        "preset": "旧版作者风格",
+    }
+    return jsonify(profile)
+
+
+@app.route("/api/style-profile", methods=["POST"])
+def update_user_style_profile():
+    data = request.get_json(force=True)
+    session = _get_access_session(data)
+    blocked = _require_role(session, STYLE_ALLOWED_ROLES)
+    if blocked:
+        return blocked
+
+    preset = (data.get("preset") or "").strip()
+    if preset not in {"旧版作者风格", "柔和版", "锐利版", "诗性版"}:
+        return jsonify({"error": "不支持的风格 preset"}), 400
+
+    profile = save_style_profile(
+        user_id=session.get("user_id", ""),
+        role=session.get("role", ROLE_NORMAL),
+        preset=preset,
+    )
+    return jsonify(profile)
+
+
+@app.route("/api/history", methods=["GET"])
+def list_user_history():
+    session = _get_access_session()
+    blocked = _require_role(session, HISTORY_ALLOWED_ROLES)
+    if blocked:
+        return blocked
+
+    direction = (request.args.get("direction") or "").strip()
+    rows = list_history_records(session.get("user_id", ""), direction=direction)
+    locked = [x for x in rows if bool(x.get("is_locked", False))]
+    recent = [x for x in rows if not bool(x.get("is_locked", False))][:5]
+    return jsonify({"locked": locked, "recent": recent})
+
+
+@app.route("/api/history/lock", methods=["POST"])
+def update_history_lock():
+    data = request.get_json(force=True)
+    session = _get_access_session(data)
+    blocked = _require_role(session, HISTORY_ALLOWED_ROLES)
+    if blocked:
+        return blocked
+
+    reading_id = (data.get("reading_id") or "").strip()
+    is_locked = bool(data.get("is_locked", False))
+    row = set_history_lock(session.get("user_id", ""), reading_id, is_locked)
+    if not row:
+        return jsonify({"error": "未找到对应历史记录"}), 404
+    return jsonify(row)
+
+
+@app.route("/api/admin/whitelist", methods=["GET"])
+def admin_list_whitelist():
+    session = _get_access_session()
+    blocked = _require_role(session, ADMIN_ONLY_ROLES)
+    if blocked:
+        return blocked
+    return jsonify({"items": list_whitelist()})
+
+
+@app.route("/api/admin/invite-codes", methods=["GET"])
+def admin_list_invite_codes():
+    session = _get_access_session()
+    blocked = _require_role(session, ADMIN_ONLY_ROLES)
+    if blocked:
+        return blocked
+    return jsonify({"items": list_invite_code_entries()})
+
+
+@app.route("/api/admin/invite-codes", methods=["POST"])
+def admin_create_invite_code():
+    data = request.get_json(force=True)
+    session = _get_access_session(data)
+    blocked = _require_role(session, INVITE_CODE_CREATE_ALLOWED_ROLES)
+    if blocked:
+        return blocked
+
+    role = (session.get("role") or ROLE_NORMAL).strip() or ROLE_NORMAL
+    created_by = session.get("user_id", "admin")
+    if role == ROLE_PILOT:
+        created_today = count_invite_codes_created_today(created_by)
+        if created_today >= PILOT_DAILY_INVITE_CODE_LIMIT:
+            return jsonify({
+                "error": "先行者每天最多创建 3 个邀请码",
+                "code": "PILOT_DAILY_LIMIT",
+                "limit": PILOT_DAILY_INVITE_CODE_LIMIT,
+                "createdToday": created_today,
+            }), 429
+
+    code = (data.get("code") or "").strip()
+    max_uses = int(data.get("max_uses", 10) or 10)
+    try:
+        row = create_invite_code(code=code, created_by=created_by, max_uses=max_uses)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify(row)
+
+
+@app.route("/api/admin/invite-codes/<code>/active", methods=["POST"])
+def admin_toggle_invite_code(code: str):
+    data = request.get_json(force=True)
+    session = _get_access_session(data)
+    blocked = _require_role(session, ADMIN_ONLY_ROLES)
+    if blocked:
+        return blocked
+
+    is_active = bool(data.get("is_active", False))
+    row = set_invite_code_active(code=code, is_active=is_active)
+    if not row:
+        return jsonify({"error": "邀请码不存在"}), 404
+    return jsonify(row)
 
 @app.route("/")
 def index():
@@ -575,6 +934,8 @@ def reading():
         return jsonify({"error": "未检测到 DEEPSEEK_API_KEY 环境变量"}), 500
 
     data = request.get_json(force=True)
+    access_session = _get_access_session(data)
+    role = (access_session.get("role") if access_session else ROLE_NORMAL) or ROLE_NORMAL
 
     card_name = data.get("card_name", "")
     orientation = data.get("orientation", "")
@@ -584,6 +945,11 @@ def reading():
     direction = data.get("direction", "")
 
     orientation_label = "正位" if orientation == "upright" else "逆位"
+
+    if role in STYLE_ALLOWED_ROLES and access_session:
+        saved_profile = get_style_profile(access_session.get("user_id", ""))
+        if saved_profile and saved_profile.get("preset"):
+            question_style = saved_profile.get("preset")
 
     card_data = find_card_data(card_name)
     if not card_data:
@@ -600,9 +966,11 @@ def reading():
     arcana_hint = infer_arcana_hint(card_data)
 
     system_prompt = f"""
-你不是在写文案，也不是在模仿作者语录。
-你是在看完一张牌后，对一个正在困惑的人说几句有用的话。
-先说人话，再说风格。
+你是一个有明确作者风格的塔罗解读者。你的语言不是通用安慰，也不是牌义说明书，而像是在对一个具体的人做一次近距离、克制、带张力的点破。
+你的解读只做三件事：
+1. 指出这张牌最突出的一个核心状态。
+2. 说明这个状态如何对应到当前问题。
+3. 给出一段整体性的寄语或抚慰，允许联想与留白。
 
 {AUTHOR_STYLE_HINT}
 
@@ -621,6 +989,9 @@ def reading():
 元素机制参考：
 {ELEMENT_THEORY_HINT}
 
+牌面整合参考：
+{CARD_SURFACE_INTEGRATION_HINT}
+
 当前牌的元素状态：
 {element_state_hint}
 
@@ -631,11 +1002,18 @@ advice 风格要求：
 {ADVICE_STYLE_HINT}
 {ADVICE_FORMAT_HINT}
 
-要求：
+结构要求必须遵守：
+1. core：只写一个核心状态或当前张力，不要展开太多，不要解释整张牌。
+2. context：只写这个状态与当前问题的连接，不要重复 core，不要重新讲牌义。
+3. advice：可以是一段整体寄语、宇宙想对你说、或状态安放，不必限定为动作建议。
+4. 每次只围绕一个主轴展开，不要面面俱到。
+5. 若为逆位，优先理解为受阻、过度、误用、内化，不等于坏结果。
+
+写作要求：
 1. 先说人话，再说风格。
-2. 只抓一个最重要的点，不要面面俱到。
-3. 不要故意写满，允许自然一点。
-4. 不要套话，不要空泛安慰。
+2. 不要故意写满，允许自然一点。
+3. 不要套话，不要空泛安慰。
+4. 不要写成教程腔，不要用“这张牌代表/这张牌通常意味着”起句。
 5. advice 不必太务实，也不要写成任务清单；优先像“被轻轻接住”的建议。
 
 安全与边界必须遵守：
@@ -657,7 +1035,7 @@ JSON 结构固定为：
 """
 
     user_prompt = f"""
-请根据以下塔罗资料，生成一段像人在说话的解读。
+请根据以下塔罗资料生成 JSON：
 
 牌名：{card_data["name_zh"]}
 方向：{orientation_label}
@@ -673,17 +1051,22 @@ JSON 结构固定为：
 元素状态：{element_state_hint}
 牌型层级：{arcana_hint}
 
-要求：
+额外要求：
 1. 只围绕一个最重要的点展开。
-2. 不要复述牌义，不要像资料整理。
-3. 不要把每句话都写得很满。
+2. 不要复述牌义，不要像资料整理，不要写成牌义说明书。
+3. core 要像一次近距离观察：先写状态、裂缝、拉扯或失衡，不要直接下定义。
 4. 如果用户给了具体问题，必须明显回应这个问题，不能泛泛而谈。
-5. context 只把这张牌和当前问题真正扣上，写出到底卡在哪里，或现在最需要看见什么。
-6. advice 不一定是解决方案，也不一定务实。
-7. advice 可以是一句轻提醒、一个元素对应的小动作、一句今日宜忌、一个小仪式，或一句带余韵的话。
-8. advice 优先让你感觉被这张牌接住，而不是被要求立刻行动。
-9. 三段合起来控制在 220 到 380 字，且 advice 字段只写正文，不加“建议：”前缀。
-10. 输出 JSON：
+5. context 要把这张牌和当前问题真正扣上，写出“到底卡在哪里”“难承认的是什么”“真正迟疑的是什么”。
+6. 一定要围绕牌面展开：至少点出一个可见细节（人物动作/视线/场景气氛/明暗元素）并据此联想。
+7. advice 也必须回扣牌面，不要脱离牌面单独抒情。
+8. advice 不一定是解决方案，也不一定务实；允许整体性的“宇宙想对你说”。
+9. advice 可以是一句轻提醒、一段寄语、一句今日宜忌、一个元素方向，或一句带余韵的话。
+10. advice 优先让你感觉被这张牌接住，而不是被要求立刻行动。
+11. 多使用“更像是在……”“未必是……反而更像……”“明明……却……”这类有留白和张力的表达。
+12. 不要出现“这张牌代表……”等过强教程腔句式。
+13. 三段合起来控制在 220 到 460 字，且 advice 字段只写正文，不加“建议：”前缀。
+14. advice 可以是 1 到 4 句，允许更灵活，但避免发散成清单。
+15. 输出 JSON：
 {{"core":"...","context":"...","advice":"..."}}
 """
 
@@ -694,8 +1077,8 @@ JSON 结构固定为：
             {"role": "user", "content": user_prompt}
         ],
         "response_format": {"type": "json_object"},
-        "temperature": 0.78,
-        "max_tokens": 500
+        "temperature": 0.9,
+        "max_tokens": 700
     }
 
     headers = {
@@ -718,13 +1101,23 @@ JSON 结构固定为：
         core = sanitize_llm_text(parsed.get("core", ""))
         context_text = sanitize_llm_text(parsed.get("context", ""))
         advice = sanitize_llm_text(parsed.get("advice", ""))
-        advice = apply_basic_advice_fallback(advice, effective_question, element)
+        advice = apply_basic_advice_fallback(advice, effective_question, element, card_data, orientation)
         reading_id = card_spirit_sessions.create_reading(
             card_name=card_name,
             orientation=orientation,
             question=effective_question,
             direction=direction,
         )
+
+        if access_session and role in HISTORY_ALLOWED_ROLES:
+            add_history_record({
+                "user_id": access_session.get("user_id", ""),
+                "role": role,
+                "direction": direction or question_type,
+                "question": effective_question,
+                "reading_id": reading_id,
+                "card_name": card_name,
+            })
 
         return jsonify({
             "reading_id": reading_id,
@@ -748,20 +1141,25 @@ JSON 结构固定为：
 @app.route("/api/card-spirit/start", methods=["POST"])
 def card_spirit_start():
     data = request.get_json(force=True)
+    access_session = _get_access_session(data)
+    blocked = _require_role(access_session, SPIRIT_ALLOWED_ROLES)
+    if blocked:
+        return blocked
+
     reading_id = (data.get("reading_id") or "").strip()
-    invite_code = (data.get("invite_code") or "").strip()
 
     if not reading_id:
         return jsonify({"error": "缺少 reading_id"}), 400
-    if not validate_invite_code(invite_code):
-        return jsonify({"error": "邀请码错误"}), 403
 
     reading = card_spirit_sessions.get_reading(reading_id)
     if not reading:
         return jsonify({"error": "reading_id 无效或已失效"}), 404
 
+    spirit_card_data = find_card_data(reading.get("card_name", ""))
+    spirit_card_profile = _build_spirit_card_profile(spirit_card_data)
+
     try:
-        session = card_spirit_sessions.create_session(reading_id=reading_id, invite_code=invite_code)
+        session = card_spirit_sessions.create_session(reading_id=reading_id)
     except ValueError:
         return jsonify({"error": "无法创建牌灵会话"}), 400
 
@@ -771,6 +1169,7 @@ def card_spirit_start():
             orientation=session.orientation,
             question=session.question,
             direction=session.direction,
+            card_profile=spirit_card_profile,
         )
         opening_text = generate_spirit_reply(build_spirit_system_prompt(), opening_prompt)
     except GeminiClientError:
@@ -835,11 +1234,15 @@ def card_spirit_message():
         for m in card_spirit_sessions.get_recent_messages(session_id, max_items=8)
     ]
 
+    spirit_card_data = find_card_data(session.card_name)
+    spirit_card_profile = _build_spirit_card_profile(spirit_card_data)
+
     prompt = build_reply_user_prompt(
         card_name=session.card_name,
         orientation=session.orientation,
         question=session.question,
         direction=session.direction,
+        card_profile=spirit_card_profile,
         summary_state=session.summary_state,
         recent_messages=recent_messages,
         user_message=user_message,

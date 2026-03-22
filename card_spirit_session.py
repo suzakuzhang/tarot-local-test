@@ -31,7 +31,6 @@ class CardSpiritSession:
     orientation: str
     question: str
     direction: str
-    invite_code: str
     started_at: str
     expires_at: str
     remaining_rounds: int
@@ -62,7 +61,7 @@ class CardSpiritSessionManager:
     def get_reading(self, reading_id: str) -> Optional[dict]:
         return self.readings.get(reading_id)
 
-    def create_session(self, reading_id: str, invite_code: str) -> CardSpiritSession:
+    def create_session(self, reading_id: str) -> CardSpiritSession:
         reading = self.get_reading(reading_id)
         if not reading:
             raise ValueError("reading_not_found")
@@ -77,7 +76,6 @@ class CardSpiritSessionManager:
             orientation=reading.get("orientation", ""),
             question=reading.get("question", ""),
             direction=reading.get("direction", ""),
-            invite_code=invite_code,
             started_at=_iso(now),
             expires_at=_iso(expires_at),
             remaining_rounds=self.max_rounds,
@@ -155,7 +153,6 @@ class CardSpiritSessionManager:
             "orientation": session.orientation,
             "question": session.question,
             "direction": session.direction,
-            "invite_code": session.invite_code,
             "started_at": session.started_at,
             "expires_at": session.expires_at,
             "remaining_rounds": session.remaining_rounds,

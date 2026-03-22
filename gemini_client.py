@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from google import genai
 
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
 
@@ -14,6 +13,11 @@ def generate_spirit_reply(system_prompt: str, user_prompt: str) -> str:
     api_key = (os.getenv("GEMINI_API_KEY") or "").strip()
     if not api_key:
         raise GeminiClientError("未检测到 GEMINI_API_KEY 环境变量")
+
+    try:
+        from google import genai
+    except Exception as exc:
+        raise GeminiClientError("当前环境缺少 google-genai 依赖") from exc
 
     try:
         client = genai.Client(api_key=api_key)

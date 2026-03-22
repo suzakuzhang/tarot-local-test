@@ -78,14 +78,37 @@ const spiritSendBtn = document.getElementById("spiritSendBtn");
 const spiritEndBtn = document.getElementById("spiritEndBtn");
 const spiritTimerEl = document.getElementById("spiritTimer");
 const spiritRoundsEl = document.getElementById("spiritRounds");
-const spiritInviteModalEl = document.getElementById("spiritInviteModal");
-const spiritInviteInputEl = document.getElementById("spiritInviteInput");
-const spiritInviteConfirmBtn = document.getElementById("spiritInviteConfirm");
-const spiritInviteCancelBtn = document.getElementById("spiritInviteCancel");
-const spiritInviteErrorEl = document.getElementById("spiritInviteError");
+const spiritEntryHintEl = document.getElementById("spiritEntryHint");
+const accessStatusTextEl = document.getElementById("accessStatusText");
+const pilotEntryBtn = document.getElementById("pilotEntryBtn");
+const accessModalEl = document.getElementById("accessModal");
+const accessModalCloseBtn = document.getElementById("accessModalClose");
+const accessModalMsgEl = document.getElementById("accessModalMsg");
+const whitelistNameInputEl = document.getElementById("whitelistNameInput");
+const whitelistBirthInputEl = document.getElementById("whitelistBirthInput");
+const whitelistActivateBtn = document.getElementById("whitelistActivateBtn");
+const accessInviteInputEl = document.getElementById("accessInviteInput");
+const accessInviteActivateBtn = document.getElementById("accessInviteActivateBtn");
+const adminCodeInputEl = document.getElementById("adminCodeInput");
+const adminBirthInputEl = document.getElementById("adminBirthInput");
+const adminActivateBtn = document.getElementById("adminActivateBtn");
+const advancedPanelEl = document.getElementById("advancedPanel");
+const stylePanelEl = document.getElementById("stylePanel");
+const stylePresetSelectEl = document.getElementById("stylePresetSelect");
+const saveStylePresetBtn = document.getElementById("saveStylePresetBtn");
+const historyPanelEl = document.getElementById("historyPanel");
+const lockedHistoryListEl = document.getElementById("lockedHistoryList");
+const recentHistoryListEl = document.getElementById("recentHistoryList");
+const adminPanelEl = document.getElementById("adminPanel");
+const refreshWhitelistBtn = document.getElementById("refreshWhitelistBtn");
+const adminWhitelistListEl = document.getElementById("adminWhitelistList");
+const newInviteCodeInputEl = document.getElementById("newInviteCodeInput");
+const createInviteCodeBtn = document.getElementById("createInviteCodeBtn");
+const adminInviteListEl = document.getElementById("adminInviteList");
 
 const MAX_DRAWS_PER_SESSION = 10;
 const DRAW_COUNT_KEY = "tarot_draw_count";
+const ACCESS_STATE_KEY = "tarot_access_state_v1";
 const LOADING_STATES = [
   "正在整理牌面的线索……",
   "正在把你的问题放回这张牌里……",
@@ -244,6 +267,245 @@ let spiritRemainingRounds = 8;
 let spiritActive = false;
 let spiritTimerTask = null;
 
+function defaultAccessState() {
+  return {
+    role: "normal",
+    accessType: "normal",
+    activated: false,
+    userName: "",
+    birthYearMonth: "",
+    styleProfile: "旧版作者风格",
+    accessToken: ""
+  };
+}
+
+let accessState = defaultAccessState();
+
+function loadAccessState() {
+  try {
+    const raw = localStorage.getItem(ACCESS_STATE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return;
+    accessState = {
+      ...defaultAccessState(),
+      ...parsed
+    };
+  } catch (_err) {
+    accessState = defaultAccessState();
+  }
+}
+
+function saveAccessState() {
+  localStorage.setItem(ACCESS_STATE_KEY, JSON.stringify(accessState));
+}
+
+function canUseSpiritByRole(role) {
+  return ["invite", "pilot", "admin"].includes(role);
+}
+
+function canUseStyleByRole(role) {
+  return ["pilot", "admin"].includes(role);
+}
+
+function canUseHistoryByRole(role) {
+  return ["pilot", "admin"].includes(role);
+}
+
+function applyAccessStateUI() {
+  const role = accessState.role || "normal";
+  if (accessStatusTextEl) {
+    const textMap = {
+      normal: "普通体验",
+      invite: "邀请码体验",
+      pilot: "先行者",
+      admin: "管理员"
+    };
+    accessStatusTextEl.textContent = textMap[role] || "普通体验";
+  }
+
+  if (spiritEntryHintEl) {
+    if (canUseSpiritByRole(role)) {
+      spiritEntryHintEl.textContent = "这张牌还有话没有说完。你可直接开启 10 分钟延伸追问。";
+    } else {
+      spiritEntryHintEl.textContent = "这张牌还有话没有说完。需要先激活先行版，或填写邀请码体验完整流程。";
+    }
+  }
+
+  if (advancedPanelEl) {
+    const show = canUseStyleByRole(role) || canUseHistoryByRole(role) || role === "admin";
+    advancedPanelEl.classList.toggle("hidden", !show);
+  }
+  if (stylePanelEl) {
+    stylePanelEl.classList.toggle("hidden", !canUseStyleByRole(role));
+  }
+  if (historyPanelEl) {
+    historyPanelEl.classList.toggle("hidden", !canUseHistoryByRole(role));
+  }
+  if (adminPanelEl) {
+    adminPanelEl.classList.toggle("hidden", role !== "admin");
+  }
+
+  refreshDrawLimitUI();
+}
+
+function showAccessModalMsg(msg, isError = true) {
+  if (!accessModalMsgEl) return;
+  accessModalMsgEl.textContent = msg;
+  accessModalMsgEl.classList.remove("hidden");
+  accessModalMsgEl.style.color = isError ? "#b03131" : "#2e7d32";
+}
+
+function clearAccessModalMsg() {
+  if (!accessModalMsgEl) return;
+  accessModalMsgEl.textContent = "";
+  accessModalMsgEl.classList.add("hidden");
+}
+
+async function activateAccess(mode, payload) {
+  const resp = await fetch("/api/access/activate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mode, ...payload })
+  });
+  return parseApiJson(resp, "/api/access/activate");
+}
+
+async function refreshAccessStatus() {
+  const token = (accessState.accessToken || "").trim();
+  const url = token ? `/api/access/status?access_token=${encodeURIComponent(token)}` : "/api/access/status";
+  const resp = await fetch(url, { method: "GET" });
+  const data = await parseApiJson(resp, "/api/access/status");
+
+  accessState = {
+    ...accessState,
+    role: data.role || "normal",
+    accessType: data.accessType || "normal",
+    activated: Boolean(data.activated),
+    userName: data.userName || "",
+    birthYearMonth: data.birthYearMonth || ""
+  };
+
+  if (!data.accessToken && !data.activated) {
+    if (accessState.role === "normal") {
+      accessState.accessToken = token || "";
+    }
+  }
+
+  saveAccessState();
+  applyAccessStateUI();
+}
+
+function authHeaders() {
+  const headers = { "Content-Type": "application/json" };
+  if (accessState.accessToken) {
+    headers["X-Access-Token"] = accessState.accessToken;
+  }
+  return headers;
+}
+
+async function loadStyleProfile() {
+  if (!canUseStyleByRole(accessState.role)) return;
+  const resp = await fetch("/api/style-profile", { method: "GET", headers: authHeaders() });
+  const data = await parseApiJson(resp, "/api/style-profile");
+  accessState.styleProfile = data.preset || accessState.styleProfile;
+  saveAccessState();
+  if (stylePresetSelectEl) {
+    stylePresetSelectEl.value = accessState.styleProfile;
+  }
+}
+
+async function saveStyleProfilePreset(preset) {
+  const resp = await fetch("/api/style-profile", {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      preset,
+      access_token: accessState.accessToken || ""
+    })
+  });
+  return parseApiJson(resp, "/api/style-profile");
+}
+
+function renderHistoryList(targetEl, rows, lockLabel) {
+  if (!targetEl) return;
+  if (!rows || !rows.length) {
+    targetEl.innerHTML = "<p class='meta'>暂无记录</p>";
+    return;
+  }
+
+  targetEl.innerHTML = rows.map(item => {
+    const question = (item.question || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const direction = (item.direction || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `
+      <div class="history-item" data-reading-id="${item.reading_id}">
+        <div class="meta">${direction} · ${item.created_at || ""}</div>
+        <div>${question}</div>
+        <button type="button" class="history-lock-btn" data-reading-id="${item.reading_id}" data-lock="${lockLabel === "上锁" ? "1" : "0"}">${lockLabel}</button>
+      </div>
+    `;
+  }).join("");
+}
+
+async function loadHistory() {
+  if (!canUseHistoryByRole(accessState.role)) return;
+  const resp = await fetch("/api/history", { method: "GET", headers: authHeaders() });
+  const data = await parseApiJson(resp, "/api/history");
+  renderHistoryList(lockedHistoryListEl, data.locked || [], "解锁");
+  renderHistoryList(recentHistoryListEl, data.recent || [], "上锁");
+}
+
+async function updateHistoryLock(readingId, isLocked) {
+  const resp = await fetch("/api/history/lock", {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      reading_id: readingId,
+      is_locked: isLocked,
+      access_token: accessState.accessToken || ""
+    })
+  });
+  return parseApiJson(resp, "/api/history/lock");
+}
+
+async function loadAdminInviteCodes() {
+  if (accessState.role !== "admin" || !adminInviteListEl) return;
+  const resp = await fetch("/api/admin/invite-codes", { method: "GET", headers: authHeaders() });
+  const data = await parseApiJson(resp, "/api/admin/invite-codes");
+  const rows = data.items || [];
+  if (!rows.length) {
+    adminInviteListEl.innerHTML = "<p class='meta'>暂无邀请码</p>";
+    return;
+  }
+  adminInviteListEl.innerHTML = rows.map(item => {
+    const active = item.is_active ? "启用中" : "已停用";
+    const nextState = item.is_active ? "停用" : "启用";
+    return `
+      <div class="history-item">
+        <div class="meta">${item.code} · ${active}</div>
+        <div>已用 ${item.used_count}/${item.max_uses}</div>
+        <button type="button" class="invite-toggle-btn" data-code="${item.code}" data-next="${item.is_active ? "0" : "1"}">${nextState}</button>
+      </div>
+    `;
+  }).join("");
+}
+
+async function loadAdminWhitelist() {
+  if (accessState.role !== "admin" || !adminWhitelistListEl) return;
+  const resp = await fetch("/api/admin/whitelist", { method: "GET", headers: authHeaders() });
+  const data = await parseApiJson(resp, "/api/admin/whitelist");
+  const rows = data.items || [];
+  if (!rows.length) {
+    adminWhitelistListEl.innerHTML = "<p class='meta'>暂无白名单配置</p>";
+    return;
+  }
+
+  adminWhitelistListEl.innerHTML = rows.map(item => {
+    const active = item.is_active ? "启用中" : "已停用";
+    return `<div class="history-item"><div class="meta">${item.name_pinyin} · ${item.birth_year_month} · ${active}</div></div>`;
+  }).join("");
+}
+
 function clearProgressTimers() {
   stopLoadingFactsRotation();
   stopLoadingStateRotation();
@@ -364,6 +626,10 @@ function getDrawCount() {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
 }
 
+function maxDrawsForCurrentRole() {
+  return accessState.role === "normal" ? 1 : MAX_DRAWS_PER_SESSION;
+}
+
 function setDrawCount(nextCount) {
   sessionStorage.setItem(DRAW_COUNT_KEY, String(nextCount));
 }
@@ -374,7 +640,27 @@ function lockDrawForSession() {
   drawArea.classList.add("hidden");
   if (chooseCardTipEl) chooseCardTipEl.hidden = true;
   emptyState.classList.remove("hidden");
-  emptyState.textContent = "你已在本次打开中抽牌 10 次。古话说‘卜不过三’，今天先到这里吧。";
+  if (accessState.role === "normal") {
+    emptyState.textContent = "普通体验已完成 1 次抽牌。激活先行版或填写邀请码，可继续完整体验。";
+  } else {
+    emptyState.textContent = "你已在本次打开中抽牌 10 次。古话说‘卜不过三’，今天先到这里吧。";
+  }
+}
+
+function refreshDrawLimitUI() {
+  const limited = getDrawCount() >= maxDrawsForCurrentRole();
+  if (limited) {
+    lockDrawForSession();
+    return;
+  }
+
+  if (shuffleBtn && shuffleBtn.textContent === "今日封盘") {
+    shuffleBtn.disabled = false;
+    shuffleBtn.textContent = "开始洗牌";
+    if (emptyState) {
+      emptyState.textContent = "点击上方按钮，先抽一张牌。";
+    }
+  }
 }
 
 async function loadCardsData() {
@@ -452,7 +738,8 @@ async function fetchAIReading(card, questionType, questionText) {
       question_type: mappedType,
       question_text: questionText || "",
       question_style: questionStyle,
-      direction: mappedType
+      direction: mappedType,
+      access_token: accessState.accessToken || ""
     })
   });
 
@@ -481,13 +768,13 @@ async function parseApiJson(resp, apiPath) {
   return data;
 }
 
-async function startCardSpirit(readingId, inviteCode) {
+async function startCardSpirit(readingId, accessToken) {
   const resp = await fetch("/api/card-spirit/start", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       reading_id: readingId,
-      invite_code: inviteCode
+      access_token: accessToken || ""
     })
   });
   return parseApiJson(resp, "/api/card-spirit/start");
@@ -669,6 +956,7 @@ function updateUI(card, aiReading, questionText, questionType) {
       spiritEntryEl.classList.add("hidden");
     }
   }
+  applyAccessStateUI();
   if (spiritPanelEl) spiritPanelEl.classList.add("hidden");
 
   const rotateStyle = card.orientation === "reversed" ? "transform: rotate(180deg);" : "";
@@ -743,65 +1031,258 @@ if (questionTypeSelect) {
   questionTypeSelect.addEventListener("change", updateQuestionPlaceholder);
 }
 
-if (spiritEnterBtn && spiritInviteModalEl) {
-  spiritEnterBtn.addEventListener("click", () => {
+async function openSpiritSession() {
+  if (!currentReadingContext || !currentReadingContext.readingId) {
+    throw new Error("当前抽牌结果不可用，请先完成一次单抽。");
+  }
+
+  const data = await startCardSpirit(currentReadingContext.readingId, accessState.accessToken || "");
+  if (spiritPanelEl) spiritPanelEl.classList.remove("hidden");
+  if (spiritMessagesEl) spiritMessagesEl.innerHTML = "";
+
+  spiritSessionId = data.session.session_id;
+  spiritExpiresAt = data.session.expires_at;
+  spiritRemainingRounds = data.session.remaining_rounds;
+  spiritActive = data.session.status === "active";
+
+  appendSpiritMessage("assistant", data.opening_message || "这张牌想先听你说一句真话。");
+  setSpiritInputEnabled(true);
+  updateSpiritMeta();
+  startSpiritTimerWatcher();
+}
+
+if (spiritEnterBtn) {
+  spiritEnterBtn.addEventListener("click", async () => {
     if (!currentReadingContext || !currentReadingContext.readingId) {
       return;
     }
-    spiritInviteModalEl.classList.remove("hidden");
-    if (spiritInviteErrorEl) {
-      spiritInviteErrorEl.textContent = "";
-      spiritInviteErrorEl.classList.add("hidden");
-    }
-    if (spiritInviteInputEl) {
-      spiritInviteInputEl.value = "";
-      spiritInviteInputEl.focus();
-    }
-  });
-}
 
-if (spiritInviteCancelBtn && spiritInviteModalEl) {
-  spiritInviteCancelBtn.addEventListener("click", () => {
-    spiritInviteModalEl.classList.add("hidden");
-  });
-}
+    if (!canUseSpiritByRole(accessState.role)) {
+      if (accessModalEl) {
+        clearAccessModalMsg();
+        showAccessModalMsg("需要先激活先行版，或填写邀请码体验完整流程。", true);
+        accessModalEl.classList.remove("hidden");
+      }
+      return;
+    }
 
-if (spiritInviteConfirmBtn && spiritInviteModalEl) {
-  spiritInviteConfirmBtn.addEventListener("click", async () => {
     try {
-      if (!currentReadingContext || !currentReadingContext.readingId) {
-        throw new Error("当前抽牌结果不可用，请先完成一次单抽。")
-      }
-
-      const inviteCode = spiritInviteInputEl ? spiritInviteInputEl.value.trim() : "";
-      if (!inviteCode) {
-        throw new Error("请输入邀请码。")
-      }
-
-      spiritInviteConfirmBtn.disabled = true;
-      const data = await startCardSpirit(currentReadingContext.readingId, inviteCode);
-
-      spiritInviteModalEl.classList.add("hidden");
-      if (spiritPanelEl) spiritPanelEl.classList.remove("hidden");
-      if (spiritMessagesEl) spiritMessagesEl.innerHTML = "";
-
-      spiritSessionId = data.session.session_id;
-      spiritExpiresAt = data.session.expires_at;
-      spiritRemainingRounds = data.session.remaining_rounds;
-      spiritActive = data.session.status === "active";
-
-      appendSpiritMessage("assistant", data.opening_message || "这张牌想先听你说一句真话。")
-      setSpiritInputEnabled(true);
-      updateSpiritMeta();
-      startSpiritTimerWatcher();
+      spiritEnterBtn.disabled = true;
+      await openSpiritSession();
     } catch (err) {
-      if (spiritInviteErrorEl) {
-        spiritInviteErrorEl.textContent = err.message || "开启失败，请稍后重试。";
-        spiritInviteErrorEl.classList.remove("hidden");
-      }
+      appendSpiritMessage("assistant", `开启牌灵失败：${err.message || "未知错误"}`);
     } finally {
-      spiritInviteConfirmBtn.disabled = false;
+      spiritEnterBtn.disabled = false;
     }
+  });
+}
+
+if (pilotEntryBtn && accessModalEl) {
+  pilotEntryBtn.addEventListener("click", () => {
+    clearAccessModalMsg();
+    accessModalEl.classList.remove("hidden");
+  });
+}
+
+if (accessModalCloseBtn && accessModalEl) {
+  accessModalCloseBtn.addEventListener("click", () => {
+    accessModalEl.classList.add("hidden");
+  });
+}
+
+if (whitelistActivateBtn) {
+  whitelistActivateBtn.addEventListener("click", async () => {
+    try {
+      whitelistActivateBtn.disabled = true;
+      const name = whitelistNameInputEl ? whitelistNameInputEl.value.trim().toLowerCase().replace(/\s+/g, "") : "";
+      const birth = whitelistBirthInputEl ? whitelistBirthInputEl.value.trim() : "";
+      const data = await activateAccess("whitelist", {
+        name_pinyin: name,
+        birth_year_month: birth
+      });
+      accessState = {
+        ...accessState,
+        role: data.role,
+        accessType: data.accessType,
+        activated: Boolean(data.activated),
+        userName: data.userName || "",
+        birthYearMonth: data.birthYearMonth || "",
+        accessToken: data.accessToken || "",
+      };
+      saveAccessState();
+      applyAccessStateUI();
+      loadStyleProfile().catch(() => {});
+      loadHistory().catch(() => {});
+      loadAdminInviteCodes().catch(() => {});
+      loadAdminWhitelist().catch(() => {});
+      showAccessModalMsg("白名单认证成功，已进入先行者模式。", false);
+    } catch (err) {
+      showAccessModalMsg(err.message || "白名单认证失败。", true);
+    } finally {
+      whitelistActivateBtn.disabled = false;
+    }
+  });
+}
+
+if (accessInviteActivateBtn) {
+  accessInviteActivateBtn.addEventListener("click", async () => {
+    try {
+      accessInviteActivateBtn.disabled = true;
+      const code = accessInviteInputEl ? accessInviteInputEl.value.trim() : "";
+      const data = await activateAccess("invite", { invite_code: code });
+      accessState = {
+        ...accessState,
+        role: data.role,
+        accessType: data.accessType,
+        activated: Boolean(data.activated),
+        userName: data.userName || "",
+        birthYearMonth: data.birthYearMonth || "",
+        accessToken: data.accessToken || "",
+      };
+      saveAccessState();
+      applyAccessStateUI();
+      loadStyleProfile().catch(() => {});
+      loadHistory().catch(() => {});
+      loadAdminInviteCodes().catch(() => {});
+      loadAdminWhitelist().catch(() => {});
+      showAccessModalMsg("邀请码验证成功，已进入完整体验模式。", false);
+    } catch (err) {
+      showAccessModalMsg(err.message || "邀请码验证失败。", true);
+    } finally {
+      accessInviteActivateBtn.disabled = false;
+    }
+  });
+}
+
+if (adminActivateBtn) {
+  adminActivateBtn.addEventListener("click", async () => {
+    try {
+      adminActivateBtn.disabled = true;
+      const code = adminCodeInputEl ? adminCodeInputEl.value.trim() : "";
+      const birth = adminBirthInputEl ? adminBirthInputEl.value.trim() : "";
+      const data = await activateAccess("admin", {
+        admin_code: code,
+        birth_date: birth
+      });
+      accessState = {
+        ...accessState,
+        role: data.role,
+        accessType: data.accessType,
+        activated: Boolean(data.activated),
+        userName: data.userName || "",
+        birthYearMonth: data.birthYearMonth || "",
+        accessToken: data.accessToken || "",
+      };
+      saveAccessState();
+      applyAccessStateUI();
+      loadStyleProfile().catch(() => {});
+      loadHistory().catch(() => {});
+      loadAdminInviteCodes().catch(() => {});
+      loadAdminWhitelist().catch(() => {});
+      showAccessModalMsg("管理员模式已启用。", false);
+    } catch (err) {
+      showAccessModalMsg(err.message || "管理员认证失败。", true);
+    } finally {
+      adminActivateBtn.disabled = false;
+    }
+  });
+}
+
+if (saveStylePresetBtn && stylePresetSelectEl) {
+  saveStylePresetBtn.addEventListener("click", async () => {
+    if (!canUseStyleByRole(accessState.role)) return;
+    try {
+      saveStylePresetBtn.disabled = true;
+      const preset = stylePresetSelectEl.value;
+      const data = await saveStyleProfilePreset(preset);
+      accessState.styleProfile = data.preset || preset;
+      saveAccessState();
+      showAccessModalMsg("风格预设已保存。", false);
+    } catch (err) {
+      showAccessModalMsg(err.message || "保存风格失败。", true);
+    } finally {
+      saveStylePresetBtn.disabled = false;
+    }
+  });
+}
+
+async function handleHistoryLockClick(event) {
+  const btn = event.target.closest(".history-lock-btn");
+  if (!btn) return;
+  const readingId = btn.getAttribute("data-reading-id") || "";
+  const lockFlag = btn.getAttribute("data-lock") === "1";
+  if (!readingId) return;
+  try {
+    await updateHistoryLock(readingId, lockFlag);
+    await loadHistory();
+  } catch (err) {
+    showAccessModalMsg(err.message || "更新历史状态失败。", true);
+  }
+}
+
+if (lockedHistoryListEl) {
+  lockedHistoryListEl.addEventListener("click", handleHistoryLockClick);
+}
+if (recentHistoryListEl) {
+  recentHistoryListEl.addEventListener("click", handleHistoryLockClick);
+}
+
+if (createInviteCodeBtn) {
+  createInviteCodeBtn.addEventListener("click", async () => {
+    if (accessState.role !== "admin") return;
+    try {
+      createInviteCodeBtn.disabled = true;
+      const code = newInviteCodeInputEl ? newInviteCodeInputEl.value.trim() : "";
+      const resp = await fetch("/api/admin/invite-codes", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          code,
+          max_uses: 10,
+          access_token: accessState.accessToken || ""
+        })
+      });
+      await parseApiJson(resp, "/api/admin/invite-codes");
+      if (newInviteCodeInputEl) newInviteCodeInputEl.value = "";
+      await loadAdminInviteCodes();
+      showAccessModalMsg("邀请码已新增。", false);
+    } catch (err) {
+      showAccessModalMsg(err.message || "新增邀请码失败。", true);
+    } finally {
+      createInviteCodeBtn.disabled = false;
+    }
+  });
+}
+
+if (adminInviteListEl) {
+  adminInviteListEl.addEventListener("click", async event => {
+    const btn = event.target.closest(".invite-toggle-btn");
+    if (!btn) return;
+    const code = btn.getAttribute("data-code") || "";
+    const nextFlag = btn.getAttribute("data-next") === "1";
+    if (!code) return;
+    try {
+      const resp = await fetch(`/api/admin/invite-codes/${encodeURIComponent(code)}/active`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          is_active: nextFlag,
+          access_token: accessState.accessToken || ""
+        })
+      });
+      await parseApiJson(resp, "/api/admin/invite-codes/<code>/active");
+      await loadAdminInviteCodes();
+    } catch (err) {
+      showAccessModalMsg(err.message || "更新邀请码状态失败。", true);
+    }
+  });
+}
+
+if (refreshWhitelistBtn) {
+  refreshWhitelistBtn.addEventListener("click", () => {
+    loadAdminWhitelist().catch(err => {
+      showAccessModalMsg(err.message || "加载白名单失败。", true);
+    });
   });
 }
 
@@ -863,7 +1344,7 @@ if (spiritEndBtn) {
 
 shuffleBtn.addEventListener("click", () => {
   const currentCount = getDrawCount();
-  if (currentCount >= MAX_DRAWS_PER_SESSION) {
+  if (currentCount >= maxDrawsForCurrentRole()) {
     lockDrawForSession();
     return;
   }
@@ -932,7 +1413,7 @@ cardBackButtons.forEach(btn => {
 
         const nextCount = getDrawCount() + 1;
         setDrawCount(nextCount);
-        if (nextCount >= MAX_DRAWS_PER_SESSION) {
+        if (nextCount >= maxDrawsForCurrentRole()) {
           lockDrawForSession();
         }
       } catch (err) {
@@ -955,13 +1436,20 @@ cardBackButtons.forEach(btn => {
 });
 
 applyStaticCopy();
+loadAccessState();
+applyAccessStateUI();
+refreshAccessStatus().catch(() => {
+  // Keep local access state when network check fails.
+});
+loadStyleProfile().catch(() => {});
+loadHistory().catch(() => {});
+loadAdminInviteCodes().catch(() => {});
+loadAdminWhitelist().catch(() => {});
 updateQuestionPlaceholder();
 resetLoadingUI();
 resetSpiritUI();
 
-if (getDrawCount() >= MAX_DRAWS_PER_SESSION) {
-  lockDrawForSession();
-}
+refreshDrawLimitUI();
 
 loadCardsData().catch(err => {
   console.error(err);

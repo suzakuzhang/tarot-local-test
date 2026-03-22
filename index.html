@@ -8,7 +8,13 @@
 </head>
 <body>
   <main class="container">
-    <h1>韦特大阿卡纳塔罗（测试版）</h1>
+    <div class="top-bar">
+      <h1>韦特大阿卡纳塔罗（测试版）</h1>
+      <div class="top-actions">
+        <span id="accessStatusText" class="access-status">普通体验</span>
+        <button id="pilotEntryBtn" type="button" class="ghost-btn">先行版</button>
+      </div>
+    </div>
     <p id="subtitle" class="subtitle"></p>
 
     <section class="panel">
@@ -95,7 +101,7 @@
 
           <div id="spiritEntry" class="spirit-entry hidden">
             <h3>牌灵模式</h3>
-            <p>这张牌还有话没有说完。输入邀请码，开启一次 10 分钟的延伸追问。</p>
+            <p id="spiritEntryHint">这张牌还有话没有说完。激活先行版后，可开启一次 10 分钟的延伸追问。</p>
             <button id="spiritEnterBtn" type="button">进入牌灵模式</button>
           </div>
 
@@ -123,6 +129,49 @@
         点击上方按钮，先抽一张牌。
       </div>
     </section>
+
+    <section id="advancedPanel" class="panel hidden">
+      <h2>先行工具</h2>
+
+      <div id="stylePanel" class="advanced-block hidden">
+        <h3>风格预设</h3>
+        <select id="stylePresetSelect">
+          <option value="旧版作者风格">旧版作者风格</option>
+          <option value="柔和版">柔和版</option>
+          <option value="锐利版">锐利版</option>
+          <option value="诗性版">诗性版</option>
+        </select>
+        <button id="saveStylePresetBtn" type="button">保存风格</button>
+      </div>
+
+      <div id="historyPanel" class="advanced-block hidden">
+        <h3>历史记录</h3>
+        <div class="history-columns">
+          <div>
+            <h4>已锁定记录</h4>
+            <div id="lockedHistoryList" class="history-list"></div>
+          </div>
+          <div>
+            <h4>最近问题（未上锁）</h4>
+            <div id="recentHistoryList" class="history-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="adminPanel" class="advanced-block hidden">
+        <h3>白名单查看</h3>
+        <button id="refreshWhitelistBtn" type="button">刷新白名单</button>
+        <div id="adminWhitelistList" class="history-list"></div>
+
+        <h3>邀请码管理</h3>
+        <div class="admin-invite-row">
+          <input id="newInviteCodeInput" type="text" maxlength="64" placeholder="新邀请码（留空可后端生成）" />
+          <button id="createInviteCodeBtn" type="button">新增邀请码</button>
+        </div>
+        <div id="adminInviteList" class="history-list"></div>
+      </div>
+    </section>
+
     <footer class="footer-note">
   <p>
     Made by <strong>Shumin Zhang</strong> ·
@@ -138,15 +187,35 @@
 </footer>
   </main>
 
-  <div id="spiritInviteModal" class="modal-overlay hidden">
+  <div id="accessModal" class="modal-overlay hidden">
     <div class="modal-card">
-      <h3>输入邀请码</h3>
-      <p>此模式仅围绕当前问题与当前牌展开，限时 10 分钟。</p>
-      <input id="spiritInviteInput" type="text" maxlength="64" placeholder="请输入邀请码" />
-      <p id="spiritInviteError" class="modal-error hidden"></p>
+      <h3>先行版</h3>
+
+      <div class="access-block">
+        <h4>白名单用户认证</h4>
+        <input id="whitelistNameInput" type="text" maxlength="64" placeholder="姓名全拼（小写无空格）" />
+        <input id="whitelistBirthInput" type="text" maxlength="7" placeholder="出生年月（YYYY-MM）" />
+        <button id="whitelistActivateBtn" type="button">激活先行身份</button>
+      </div>
+
+      <div class="access-block">
+        <h4>邀请码填写</h4>
+        <input id="accessInviteInput" type="text" maxlength="64" placeholder="请输入邀请码" />
+        <button id="accessInviteActivateBtn" type="button">验证邀请码</button>
+      </div>
+
+      <div class="access-block admin-block">
+        <details>
+          <summary>管理员入口</summary>
+          <input id="adminCodeInput" type="text" maxlength="64" placeholder="管理员代码" />
+          <input id="adminBirthInput" type="text" maxlength="10" placeholder="出生日期（YYYY-MM-DD）" />
+          <button id="adminActivateBtn" type="button">进入管理模式</button>
+        </details>
+      </div>
+
+      <p id="accessModalMsg" class="modal-error hidden"></p>
       <div class="modal-actions">
-        <button id="spiritInviteConfirm" type="button">验证并开启</button>
-        <button id="spiritInviteCancel" type="button" class="ghost-btn">取消</button>
+        <button id="accessModalClose" type="button" class="ghost-btn">关闭</button>
       </div>
     </div>
   </div>
