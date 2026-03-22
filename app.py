@@ -29,6 +29,7 @@ from invite_codes import (
     create_invite_code,
     list_invite_code_entries,
     set_invite_code_active,
+    set_invite_code_max_uses,
 )
 from pilot_whitelist import list_whitelist, validate_admin_user, validate_pilot_user
 from storage import (
@@ -909,6 +910,30 @@ def admin_toggle_invite_code(code: str):
 
     is_active = bool(data.get("is_active", False))
     row = set_invite_code_active(code=code, is_active=is_active)
+    if not row:
+        return jsonify({"error": "邀请码不存在"}), 404
+    return jsonify(row)
+
+
+@app.route("/api/admin/invite-codes/<code>/quota", methods=["POST"])
+def admin_update_invite_code_quota(code: str):
+    data = request.get_json(force=True)
+    session = _get_access_session(data)
+    blocked = _require_role(session, ADMIN_ONLY_ROLES)
+    if blocked:
+        return blocked
+
+    try:
+        max_uses = int(data.get("max_uses", 10) or 10)
+    except (TypeError, ValueError):
+        return jsonify({"error": "max_uses 必须是整数"}), 400
+
+    reset_used_count = bool(data.get("reset_used_count", False))
+    row = set_invite_code_max_uses(
+        code=code,
+        max_uses=max_uses,
+        reset_used_count=reset_used_count,
+    )
     if not row:
         return jsonify({"error": "邀请码不存在"}), 404
     return jsonify(row)

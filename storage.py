@@ -172,6 +172,44 @@ def set_invite_code_active(code: str, is_active: bool) -> Optional[Dict]:
     return None
 
 
+def set_invite_code_max_uses(code: str, max_uses: int, reset_used_count: bool = False) -> Optional[Dict]:
+    key = (code or "").strip().upper()
+    if not key:
+        return None
+
+    limit = max(1, int(max_uses))
+
+    with _LOCK:
+        data = _load()
+        invite_codes = data.get("invite_codes", [])
+        for idx, item in enumerate(invite_codes):
+            if item.get("code") != key:
+                continue
+
+            old_used = int(item.get("used_count", 0))
+            old_max = int(item.get("max_uses", 10))
+            old_active = bool(item.get("is_active", True))
+
+            item["max_uses"] = limit
+            if reset_used_count:
+                item["used_count"] = 0
+
+            used = int(item.get("used_count", 0))
+            if used >= limit:
+                item["is_active"] = False
+            else:
+                # Auto-reactivate when the old code was exhausted and max_uses is increased.
+                if (not old_active) and old_used >= old_max:
+                    item["is_active"] = True
+
+            invite_codes[idx] = item
+            data["invite_codes"] = invite_codes
+            _save(data)
+            return dict(item)
+
+    return None
+
+
 def create_access_session(payload: Dict, ttl_hours: int = 24) -> Dict:
     token = uuid.uuid4().hex
     expires_at = (datetime.now(timezone.utc) + timedelta(hours=max(1, int(ttl_hours)))).isoformat()

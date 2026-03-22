@@ -485,6 +485,7 @@ async function loadAdminInviteCodes() {
         <div class="meta">${item.code} · ${active}</div>
         <div>已用 ${item.used_count}/${item.max_uses}</div>
         <button type="button" class="invite-toggle-btn" data-code="${item.code}" data-next="${item.is_active ? "0" : "1"}">${nextState}</button>
+        <button type="button" class="invite-quota-btn" data-code="${item.code}" data-max="${item.max_uses}">调次数</button>
       </div>
     `;
   }).join("");
@@ -1145,7 +1146,20 @@ if (accessInviteActivateBtn) {
       loadHistory().catch(() => {});
       loadAdminInviteCodes().catch(() => {});
       loadAdminWhitelist().catch(() => {});
-      showAccessModalMsg("邀请码验证成功，已进入完整体验模式。", false);
+      let msg = "邀请码验证成功，已进入完整体验模式。";
+      if (data.inviteUsage) {
+        const usedCount = Number(data.inviteUsage.usedCount || 0);
+        const maxUses = Number(data.inviteUsage.maxUses || 10);
+        const isActive = Boolean(data.inviteUsage.isActive);
+        const remaining = Math.max(0, maxUses - usedCount);
+
+        if (!isActive || remaining <= 0) {
+          msg += `（此邀请码已用 ${usedCount}/${maxUses} 次，已停用）`;
+        } else {
+          msg += `（此邀请码已用 ${usedCount}/${maxUses} 次，剩余 ${remaining} 次）`;
+        }
+      }
+      showAccessModalMsg(msg, false);
     } catch (err) {
       showAccessModalMsg(err.message || "邀请码验证失败。", true);
     } finally {
@@ -1257,23 +1271,56 @@ if (createInviteCodeBtn) {
 if (adminInviteListEl) {
   adminInviteListEl.addEventListener("click", async event => {
     const btn = event.target.closest(".invite-toggle-btn");
-    if (!btn) return;
-    const code = btn.getAttribute("data-code") || "";
-    const nextFlag = btn.getAttribute("data-next") === "1";
+    if (btn) {
+      const code = btn.getAttribute("data-code") || "";
+      const nextFlag = btn.getAttribute("data-next") === "1";
+      if (!code) return;
+      try {
+        const resp = await fetch(`/api/admin/invite-codes/${encodeURIComponent(code)}/active`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            is_active: nextFlag,
+            access_token: accessState.accessToken || ""
+          })
+        });
+        await parseApiJson(resp, "/api/admin/invite-codes/<code>/active");
+        await loadAdminInviteCodes();
+      } catch (err) {
+        showAccessModalMsg(err.message || "更新邀请码状态失败。", true);
+      }
+      return;
+    }
+
+    const quotaBtn = event.target.closest(".invite-quota-btn");
+    if (!quotaBtn) return;
+    const code = quotaBtn.getAttribute("data-code") || "";
+    const currentMax = Number(quotaBtn.getAttribute("data-max") || 10);
     if (!code) return;
+
+    const input = window.prompt(`请输入 ${code} 的可用总次数（max_uses）`, String(currentMax));
+    if (input === null) return;
+
+    const nextMax = Number(String(input).trim());
+    if (!Number.isFinite(nextMax) || nextMax < 1) {
+      showAccessModalMsg("次数必须是大于等于 1 的数字。", true);
+      return;
+    }
+
     try {
-      const resp = await fetch(`/api/admin/invite-codes/${encodeURIComponent(code)}/active`, {
+      const resp = await fetch(`/api/admin/invite-codes/${encodeURIComponent(code)}/quota`, {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({
-          is_active: nextFlag,
+          max_uses: Math.floor(nextMax),
           access_token: accessState.accessToken || ""
         })
       });
-      await parseApiJson(resp, "/api/admin/invite-codes/<code>/active");
+      await parseApiJson(resp, "/api/admin/invite-codes/<code>/quota");
       await loadAdminInviteCodes();
+      showAccessModalMsg(`已更新 ${code} 的可用总次数为 ${Math.floor(nextMax)}。`, false);
     } catch (err) {
-      showAccessModalMsg(err.message || "更新邀请码状态失败。", true);
+      showAccessModalMsg(err.message || "更新邀请码次数失败。", true);
     }
   });
 }
