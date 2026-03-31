@@ -160,5 +160,27 @@ class CardSpiritSessionManager:
             "summary_state": session.summary_state,
         }
 
+    def serialize_full_session(self, session: CardSpiritSession) -> dict:
+        return {
+            **self.serialize_session(session),
+            "messages": [
+                {
+                    "session_id": m.session_id,
+                    "role": m.role,
+                    "content": m.content,
+                    "created_at": m.created_at,
+                    "round_index": m.round_index,
+                }
+                for m in session.messages
+            ],
+            "message_count": len(session.messages),
+        }
+
+    def export_session(self, session_id: str) -> Optional[dict]:
+        session = self.get_session(session_id)
+        if not session:
+            return None
+        return self.serialize_full_session(session)
+
 
 card_spirit_sessions = CardSpiritSessionManager(ttl_seconds=600, max_rounds=8)

@@ -23,6 +23,8 @@ def _default_data() -> Dict:
         "access_sessions": {},
         "style_profiles": {},
         "history_records": [],
+        "research_readings": [],
+        "research_spirit_sessions": {},
     }
 
 
@@ -371,3 +373,70 @@ def set_history_lock(user_id: str, reading_id: str, is_locked: bool) -> Optional
         data["history_records"] = history
         _save(data)
         return updated
+
+
+def save_research_reading(record: Dict) -> Dict:
+    reading_id = str(record.get("reading_id", "")).strip()
+    if not reading_id:
+        raise ValueError("缺少字段: reading_id")
+
+    row = dict(record)
+    row["reading_id"] = reading_id
+    row["created_at"] = str(record.get("created_at") or _utcnow_iso()).strip()
+    row["updated_at"] = _utcnow_iso()
+
+    with _LOCK:
+        data = _load()
+        readings = data.get("research_readings", [])
+        updated = False
+        for idx, item in enumerate(readings):
+            if item.get("reading_id") == reading_id:
+                readings[idx] = row
+                updated = True
+                break
+        if not updated:
+            readings.append(row)
+
+        if len(readings) > 1000:
+            readings = readings[-1000:]
+
+        data["research_readings"] = readings
+        _save(data)
+        return dict(row)
+
+
+def upsert_research_spirit_session(record: Dict) -> Dict:
+    session_id = str(record.get("session_id", "")).strip()
+    if not session_id:
+        raise ValueError("缺少字段: session_id")
+
+    row = dict(record)
+    row["session_id"] = session_id
+    row["updated_at"] = _utcnow_iso()
+
+    with _LOCK:
+        data = _load()
+        sessions = data.get("research_spirit_sessions", {})
+        sessions[session_id] = row
+        data["research_spirit_sessions"] = sessions
+        _save(data)
+        return dict(row)
+
+
+def export_research_data() -> Dict:
+    with _LOCK:
+        data = _load()
+        readings = list(data.get("research_readings", []))
+        readings.sort(key=lambda x: x.get("created_at", ""))
+
+        sessions = list((data.get("research_spirit_sessions", {}) or {}).values())
+        sessions.sort(key=lambda x: x.get("started_at", ""))
+
+        return {
+            "readings": readings,
+            "spirit_sessions": sessions,
+            "counts": {
+                "readings": len(readings),
+                "spirit_sessions": len(sessions),
+            },
+        }

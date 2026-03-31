@@ -36,11 +36,14 @@ from storage import (
     add_history_record,
     count_invite_codes_created_today,
     create_access_session,
+    export_research_data,
     get_access_session,
     get_style_profile,
     list_history_records,
     save_style_profile,
+    save_research_reading,
     set_history_lock,
+    upsert_research_spirit_session,
 )
 
 PILOT_DAILY_INVITE_CODE_LIMIT = 3
@@ -50,7 +53,7 @@ from card_spirit_prompt import (
     build_opening_user_prompt,
     build_reply_user_prompt,
 )
-from gemini_client import generate_spirit_reply, GeminiClientError
+from gemini_client import GEMINI_MODEL, generate_spirit_reply, GeminiClientError
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 PRIVATE_DOCS_EXTRACTED_DIR = BASE_DIR / "private_docs" / "extracted"
@@ -65,6 +68,8 @@ with open(CARDS_DATA_PATH, "r", encoding="utf-8") as f:
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "").strip()
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 DEEPSEEK_MODEL = "deepseek-chat"
+TAROT_READING_PROMPT_VERSION = "tarot-reading-v1"
+TAROT_SPIRIT_PROMPT_VERSION = "tarot-card-spirit-v1"
 
 LEADING_LABEL_PATTERNS = (
     "一句建议",
@@ -705,6 +710,17 @@ def _serialize_access_session(row: dict) -> dict:
     }
 
 
+def _persist_research_spirit_session(session_id: str, model_name: str = GEMINI_MODEL) -> None:
+    exported = card_spirit_sessions.export_session(session_id)
+    if not exported:
+        return
+    upsert_research_spirit_session({
+        **exported,
+        "model": model_name,
+        "prompt_version": TAROT_SPIRIT_PROMPT_VERSION,
+    })
+
+
 @app.route("/api/access/activate", methods=["POST"])
 def activate_access():
     data = request.get_json(force=True)
@@ -938,6 +954,15 @@ def admin_update_invite_code_quota(code: str):
         return jsonify({"error": "邀请码不存在"}), 404
     return jsonify(row)
 
+
+@app.route("/api/admin/research-export", methods=["GET"])
+def admin_research_export():
+    session = _get_access_session()
+    blocked = _require_role(session, ADMIN_ONLY_ROLES)
+    if blocked:
+        return blocked
+    return jsonify(export_research_data())
+
 @app.route("/")
 def index():
     return send_from_directory(BASE_DIR, "index.html")
@@ -1144,6 +1169,32 @@ JSON 结构固定为：
                 "card_name": card_name,
             })
 
+        try:
+            save_research_reading({
+                "reading_id": reading_id,
+                "role": role,
+                "user_id": access_session.get("user_id", "") if access_session else "",
+                "question_type": question_type,
+                "question_text_raw": question_text,
+                "question_text_effective": effective_question,
+                "question_style": question_style,
+                "direction": direction,
+                "card_name": card_name,
+                "orientation": orientation,
+                "orientation_label": orientation_label,
+                "model": DEEPSEEK_MODEL,
+                "prompt_version": TAROT_READING_PROMPT_VERSION,
+                "system_prompt": system_prompt,
+                "user_prompt": user_prompt,
+                "output": {
+                    "core": core,
+                    "context": context_text,
+                    "advice": advice,
+                },
+            })
+        except Exception:
+            pass
+
         return jsonify({
             "reading_id": reading_id,
             "core": core,
@@ -1188,6 +1239,7 @@ def card_spirit_start():
     except ValueError:
         return jsonify({"error": "无法创建牌灵会话"}), 400
 
+    spirit_model = GEMINI_MODEL
     try:
         opening_prompt = build_opening_user_prompt(
             card_name=session.card_name,
@@ -1198,6 +1250,7 @@ def card_spirit_start():
         )
         opening_text = generate_spirit_reply(build_spirit_system_prompt(), opening_prompt)
     except GeminiClientError:
+        spirit_model = "fallback"
         opening_text = _default_spirit_opening(session.card_name, session.orientation, session.question)
 
     opening_text = sanitize_llm_text(opening_text)
@@ -1207,6 +1260,11 @@ def card_spirit_start():
         content=opening_text,
         round_index=0,
     )
+
+    try:
+        _persist_research_spirit_session(session.session_id, model_name=spirit_model)
+    except Exception:
+        pass
 
     return jsonify({
         "session": card_spirit_sessions.serialize_session(session),
@@ -1250,6 +1308,11 @@ def card_spirit_message():
         round_index=next_round,
     )
 
+    try:
+        _persist_research_spirit_session(session_id)
+    except Exception:
+        pass
+
     recent_messages = [
         {
             "role": m.role,
@@ -1287,6 +1350,11 @@ def card_spirit_message():
     )
     card_spirit_sessions.consume_round(session)
 
+    try:
+        _persist_research_spirit_session(session_id)
+    except Exception:
+        pass
+
     return jsonify({
         "reply": reply,
         "remaining_rounds": session.remaining_rounds,
@@ -1305,6 +1373,11 @@ def card_spirit_end():
     session = card_spirit_sessions.end_session(session_id, reason="ended")
     if not session:
         return jsonify({"error": "会话不存在"}), 404
+
+    try:
+        _persist_research_spirit_session(session_id)
+    except Exception:
+        pass
 
     return jsonify({
         "status": session.status,
