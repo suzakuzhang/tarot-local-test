@@ -8,6 +8,7 @@ import pathlib
 import re
 import random
 import requests
+import uuid
 from access_control import (
     ACCESS_ADMIN_CODE,
     ACCESS_INVITE_CODE,
@@ -725,6 +726,17 @@ def _persist_research_spirit_session(session_id: str, model_name: str = GEMINI_M
 def activate_access():
     data = request.get_json(force=True)
     mode = (data.get("mode") or "").strip()
+
+    if mode == "normal":
+        row = create_access_session({
+            "role": ROLE_NORMAL,
+            "access_type": ACCESS_NORMAL,
+            "activated": True,
+            "user_id": f"normal:{uuid.uuid4().hex[:12]}",
+            "user_name": "",
+            "birth_year_month": "",
+        })
+        return jsonify(_serialize_access_session(row))
 
     if mode == "whitelist":
         name = (data.get("name_pinyin") or "").strip()

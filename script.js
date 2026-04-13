@@ -301,35 +301,31 @@ function saveAccessState() {
 }
 
 function canUseSpiritByRole(role) {
-  return ["invite", "pilot", "admin"].includes(role);
+  return Boolean(role);
 }
 
 function canUseStyleByRole(role) {
-  return ["pilot", "admin"].includes(role);
+  return Boolean(role);
 }
 
 function canUseHistoryByRole(role) {
-  return ["pilot", "admin"].includes(role);
+  return Boolean(role);
 }
 
 function applyAccessStateUI() {
   const role = accessState.role || "normal";
   if (accessStatusTextEl) {
     const textMap = {
-      normal: "普通体验",
+      normal: "开放体验",
       invite: "邀请码体验",
       pilot: "先行者",
       admin: "管理员"
     };
-    accessStatusTextEl.textContent = textMap[role] || "普通体验";
+    accessStatusTextEl.textContent = textMap[role] || "开放体验";
   }
 
   if (spiritEntryHintEl) {
-    if (canUseSpiritByRole(role)) {
-      spiritEntryHintEl.textContent = "这张牌还有话没有说完。你可直接开启 10 分钟延伸追问。";
-    } else {
-      spiritEntryHintEl.textContent = "这张牌还有话没有说完。需要先激活先行版，或填写邀请码体验完整流程。";
-    }
+    spiritEntryHintEl.textContent = "这张牌还有话没有说完。你可直接开启 10 分钟延伸追问。";
   }
 
   if (advancedPanelEl) {
@@ -383,14 +379,9 @@ async function refreshAccessStatus() {
     accessType: data.accessType || "normal",
     activated: Boolean(data.activated),
     userName: data.userName || "",
-    birthYearMonth: data.birthYearMonth || ""
+    birthYearMonth: data.birthYearMonth || "",
+    accessToken: data.accessToken || (data.activated ? token : "")
   };
-
-  if (!data.accessToken && !data.activated) {
-    if (accessState.role === "normal") {
-      accessState.accessToken = token || "";
-    }
-  }
 
   saveAccessState();
   applyAccessStateUI();
@@ -628,7 +619,7 @@ function getDrawCount() {
 }
 
 function maxDrawsForCurrentRole() {
-  return accessState.role === "normal" ? 1 : MAX_DRAWS_PER_SESSION;
+  return MAX_DRAWS_PER_SESSION;
 }
 
 function setDrawCount(nextCount) {
@@ -641,11 +632,7 @@ function lockDrawForSession() {
   drawArea.classList.add("hidden");
   if (chooseCardTipEl) chooseCardTipEl.hidden = true;
   emptyState.classList.remove("hidden");
-  if (accessState.role === "normal") {
-    emptyState.textContent = "普通体验已完成 1 次抽牌。激活先行版或填写邀请码，可继续完整体验。";
-  } else {
-    emptyState.textContent = "你已在本次打开中抽牌 10 次。古话说‘卜不过三’，今天先到这里吧。";
-  }
+  emptyState.textContent = "你已在本次打开中抽牌 10 次。古话说‘卜不过三’，今天先到这里吧。";
 }
 
 function refreshDrawLimitUI() {
@@ -1055,15 +1042,6 @@ async function openSpiritSession() {
 if (spiritEnterBtn) {
   spiritEnterBtn.addEventListener("click", async () => {
     if (!currentReadingContext || !currentReadingContext.readingId) {
-      return;
-    }
-
-    if (!canUseSpiritByRole(accessState.role)) {
-      if (accessModalEl) {
-        clearAccessModalMsg();
-        showAccessModalMsg("需要先激活先行版，或填写邀请码体验完整流程。", true);
-        accessModalEl.classList.remove("hidden");
-      }
       return;
     }
 
@@ -1485,13 +1463,6 @@ cardBackButtons.forEach(btn => {
 applyStaticCopy();
 loadAccessState();
 applyAccessStateUI();
-refreshAccessStatus().catch(() => {
-  // Keep local access state when network check fails.
-});
-loadStyleProfile().catch(() => {});
-loadHistory().catch(() => {});
-loadAdminInviteCodes().catch(() => {});
-loadAdminWhitelist().catch(() => {});
 updateQuestionPlaceholder();
 resetLoadingUI();
 resetSpiritUI();
@@ -1503,4 +1474,34 @@ loadCardsData().catch(err => {
   emptyState.classList.remove("hidden");
   emptyState.textContent = "牌库加载失败：" + err.message;
 });
+
+(async () => {
+  try {
+    if (accessState.accessToken) {
+      await refreshAccessStatus();
+    }
+
+    if (!accessState.accessToken) {
+      const data = await activateAccess("normal", {});
+      accessState = {
+        ...accessState,
+        role: data.role || "normal",
+        accessType: data.accessType || "normal",
+        activated: Boolean(data.activated),
+        accessToken: data.accessToken || "",
+      };
+      saveAccessState();
+      await refreshAccessStatus();
+    }
+
+    await loadStyleProfile().catch(() => {});
+    await loadHistory().catch(() => {});
+    await loadAdminInviteCodes().catch(() => {});
+    await loadAdminWhitelist().catch(() => {});
+  } catch (_err) {
+    // Keep local access state when network check fails.
+  } finally {
+    applyAccessStateUI();
+  }
+})();
 }
