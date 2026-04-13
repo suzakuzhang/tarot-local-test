@@ -305,11 +305,11 @@ function canUseSpiritByRole(role) {
 }
 
 function canUseStyleByRole(role) {
-  return Boolean(role);
+  return role === "pilot" || role === "admin";
 }
 
 function canUseHistoryByRole(role) {
-  return Boolean(role);
+  return role === "pilot" || role === "admin";
 }
 
 function applyAccessStateUI() {
