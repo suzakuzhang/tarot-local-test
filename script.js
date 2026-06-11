@@ -40,7 +40,7 @@ const questionTypeMap = {
   love: "感情",
   work: "工作",
   emotion: "情绪",
-  growth: "自我成长"
+  growth: "个人成长"
 };
 
 const questionPlaceholderMap = {
@@ -79,6 +79,20 @@ const spiritEndBtn = document.getElementById("spiritEndBtn");
 const spiritTimerEl = document.getElementById("spiritTimer");
 const spiritRoundsEl = document.getElementById("spiritRounds");
 const spiritEntryHintEl = document.getElementById("spiritEntryHint");
+const spiritEntryImageEl = document.getElementById("spiritEntryImage");
+const heroStartBtn = document.getElementById("heroStartBtn");
+const tarotHeroEl = document.getElementById("tarotHero");
+const readingPanelEl = document.getElementById("readingPanel");
+const journeyPanelEl = document.getElementById("journeyPanel");
+const journeySummaryEl = document.getElementById("journeySummary");
+const journeyPrevEl = document.getElementById("journeyPrev");
+const journeyCurrentEl = document.getElementById("journeyCurrent");
+const journeyNextEl = document.getElementById("journeyNext");
+const journeyRailEl = document.getElementById("journeyRail");
+const questionTypeCloudEl = document.getElementById("questionTypeCloud");
+const customQuestionTypeEl = document.getElementById("customQuestionType");
+const customQuestionTypeBtn = document.getElementById("customQuestionTypeBtn");
+const activeQuestionTypeHintEl = document.getElementById("activeQuestionTypeHint");
 const accessStatusTextEl = document.getElementById("accessStatusText");
 const pilotEntryBtn = document.getElementById("pilotEntryBtn");
 const accessModalEl = document.getElementById("accessModal");
@@ -244,6 +258,15 @@ const LOADING_FACTS = {
     ]
   }
 };
+
+const FOOL_JOURNEY_PHASES = [
+  { start: 0, end: 0, title: "出发", body: "还没有地图,但已经站到门口。" },
+  { start: 1, end: 5, title: "工具与秩序", body: "学习如何使用资源、直觉、身体、规则与传统。" },
+  { start: 6, end: 7, title: "选择与推进", body: "从被世界塑形,转向开始决定自己的方向。" },
+  { start: 8, end: 14, title: "内在试炼", body: "力量、孤独、变化、判断、暂停、结束与调和依次出现。" },
+  { start: 15, end: 16, title: "阴影与崩塌", body: "执念和旧结构被照亮,稳定感被迫重新检查。" },
+  { start: 17, end: 21, title: "回归与整合", body: "希望、迷雾、阳光、召唤与完成,把经验放回整体。" }
+];
 
 if (!shuffleBtn || !drawArea || !cardVisual || !emptyState || !resultCard) {
   console.warn("页面关键节点未找到：", {
@@ -682,9 +705,59 @@ function drawFromDeck() {
   return { drawnCard, deck: shuffledDeck };
 }
 
+function normalizeCustomType(raw) {
+  return (raw || "").trim().replace(/^#+\s*/, "").slice(0, 18);
+}
+
+function activeQuestionTypeLabel() {
+  const questionType = document.getElementById("questionType").value;
+  if (questionType === "custom") {
+    const custom = normalizeCustomType(customQuestionTypeEl ? customQuestionTypeEl.value : "");
+    return custom || "自定义";
+  }
+  return questionTypeMap[questionType] || questionType;
+}
+
+function setActiveQuestionType(type, label) {
+  const select = document.getElementById("questionType");
+  if (!select) return;
+
+  select.value = type;
+  if (type === "custom" && customQuestionTypeEl && label) {
+    customQuestionTypeEl.value = normalizeCustomType(label);
+  }
+
+  if (questionTypeCloudEl) {
+    questionTypeCloudEl.querySelectorAll(".question-type-chip").forEach(chip => {
+      chip.classList.toggle("is-active", chip.getAttribute("data-type") === type);
+    });
+
+    if (type === "custom") {
+      const customLabel = normalizeCustomType(label || (customQuestionTypeEl ? customQuestionTypeEl.value : ""));
+      if (customLabel) {
+        let customChip = questionTypeCloudEl.querySelector('.question-type-chip[data-type="custom"]');
+        if (!customChip) {
+          customChip = document.createElement("button");
+          customChip.type = "button";
+          customChip.className = "question-type-chip";
+          customChip.setAttribute("data-type", "custom");
+          questionTypeCloudEl.appendChild(customChip);
+        }
+        customChip.textContent = `# ${customLabel}`;
+        customChip.classList.add("is-active");
+      }
+    }
+  }
+
+  if (activeQuestionTypeHintEl) {
+    activeQuestionTypeHintEl.textContent = `当前主题:# ${activeQuestionTypeLabel()}`;
+  }
+  updateQuestionPlaceholder();
+}
+
 function updateQuestionPlaceholder() {
   const questionType = document.getElementById("questionType").value;
-  const mappedType = questionTypeMap[questionType] || questionType;
+  const mappedType = activeQuestionTypeLabel();
   if (questionInput) {
     questionInput.placeholder =
       COPY.placeholders[mappedType] || questionPlaceholderMap[questionType] || "比如：我现在该注意什么？";
@@ -713,7 +786,7 @@ function detectQuestionStyle(questionText, questionType) {
 
 async function fetchAIReading(card, questionType, questionText) {
   const questionStyle = detectQuestionStyle(questionText, questionType);
-  const mappedType = questionTypeMap[questionType] || questionType;
+  const mappedType = activeQuestionTypeLabel();
 
   const resp = await fetch("/api/reading", {
     method: "POST",
@@ -844,6 +917,13 @@ function resetSpiritUI() {
   if (spiritInputEl) spiritInputEl.value = "";
   if (spiritPanelEl) spiritPanelEl.classList.add("hidden");
   if (spiritEntryEl) spiritEntryEl.classList.add("hidden");
+  if (spiritEntryImageEl) spiritEntryImageEl.src = "/assets/tarotback.png";
+  if (cardVisual) {
+    cardVisual.classList.remove("can-enter-spirit");
+    cardVisual.removeAttribute("role");
+    cardVisual.removeAttribute("tabindex");
+    cardVisual.removeAttribute("aria-label");
+  }
   setSpiritInputEnabled(false);
   updateSpiritMeta();
 }
@@ -912,6 +992,98 @@ ${card.summary_meaning}
 ${orientationMeaning}`;
 }
 
+function journeyPhaseFor(cardId) {
+  return FOOL_JOURNEY_PHASES.find(phase => cardId >= phase.start && cardId <= phase.end) || FOOL_JOURNEY_PHASES[0];
+}
+
+function buildJourneyBody(card, role) {
+  if (!card) {
+    return role === "prev"
+      ? "这是旅程的开端。前面还没有牌,只有将要迈出的第一步。"
+      : "这是大阿卡纳的收束。后面不再是下一张牌,而是把经验带回现实。";
+  }
+  const firstLine = String(card.summary_meaning || "").split("，")[0].split("。")[0].trim();
+  return firstLine || "这一站把问题放进新的象征位置。";
+}
+
+function renderJourneyStage(el, label, card, role) {
+  if (!el) return;
+  el.innerHTML = "";
+
+  const labelEl = document.createElement("p");
+  labelEl.className = "journey-stage-label";
+  labelEl.textContent = label;
+
+  const nameEl = document.createElement("p");
+  nameEl.className = "journey-stage-name";
+  nameEl.textContent = card ? `${String(card.id).padStart(2, "0")} · ${card.name_zh}` : "旅程之外";
+
+  const bodyEl = document.createElement("p");
+  bodyEl.className = "journey-stage-body";
+  bodyEl.textContent = buildJourneyBody(card, role);
+
+  el.append(labelEl, nameEl, bodyEl);
+
+  if (role === "current" && card) {
+    const gate = document.createElement("button");
+    gate.type = "button";
+    gate.className = "journey-spirit-gate";
+    gate.setAttribute("aria-label", `进入${card.name_zh}的牌灵导览`);
+
+    const img = document.createElement("img");
+    img.src = card.image;
+    img.alt = card.name_zh;
+    if (card.orientation === "reversed") img.style.transform = "rotate(180deg)";
+
+    const text = document.createElement("span");
+    text.textContent = "进入牌灵";
+
+    gate.append(img, text);
+    el.appendChild(gate);
+  }
+}
+
+function renderFoolJourney(card) {
+  if (!journeyPanelEl || !card || !Array.isArray(majorArcana) || !majorArcana.length) return;
+
+  const ordered = [...majorArcana].sort((a, b) => Number(a.id) - Number(b.id));
+  const currentId = Number(card.id);
+  const currentIndex = ordered.findIndex(item => Number(item.id) === currentId);
+  const prevCard = currentIndex > 0 ? ordered[currentIndex - 1] : null;
+  const nextCard = currentIndex >= 0 && currentIndex < ordered.length - 1 ? ordered[currentIndex + 1] : null;
+  const phase = journeyPhaseFor(currentId);
+  const orientationText = card.orientation === "reversed" ? "逆位让这一站更像受阻、内化或尚未对齐的课题。" : "正位让这一站更直接地显露为当前课题。";
+
+  if (journeySummaryEl) {
+    journeySummaryEl.textContent =
+      `第 ${String(currentId).padStart(2, "0")} 张「${card.name_zh}」位于「${phase.title}」段落: ${phase.body}${orientationText}`;
+  }
+
+  renderJourneyStage(journeyPrevEl, "来处", prevCard, "prev");
+  renderJourneyStage(journeyCurrentEl, "本张牌", card, "current");
+  renderJourneyStage(journeyNextEl, "去向", nextCard, "next");
+
+  if (journeyRailEl) {
+    journeyRailEl.innerHTML = "";
+    ordered.forEach(item => {
+      const node = document.createElement("button");
+      node.type = "button";
+      node.className = `journey-dot ${Number(item.id) === currentId ? "is-active" : ""}`;
+      node.textContent = String(item.id).padStart(2, "0");
+      node.title = `${String(item.id).padStart(2, "0")} · ${item.name_zh}`;
+      journeyRailEl.appendChild(node);
+    });
+  }
+
+  journeyPanelEl.classList.remove("hidden");
+}
+
+function resetJourneyUI() {
+  if (journeyPanelEl) journeyPanelEl.classList.add("hidden");
+  if (journeySummaryEl) journeySummaryEl.textContent = "";
+  if (journeyRailEl) journeyRailEl.innerHTML = "";
+}
+
 function updateUI(card, aiReading, questionText, questionType) {
   const orientationLabel = card.orientation === "upright" ? "正位" : "逆位";
 
@@ -934,7 +1106,7 @@ function updateUI(card, aiReading, questionText, questionType) {
     cardName: card.name_zh,
     orientation: card.orientation,
     question: questionText || "",
-    direction: questionTypeMap[questionType] || questionType || ""
+    direction: activeQuestionTypeLabel()
   };
 
   if (spiritEntryEl) {
@@ -955,10 +1127,14 @@ function updateUI(card, aiReading, questionText, questionType) {
       style="${rotateStyle}"
     />
   `;
+
+  enableSpiritGuideEntry(card);
+  renderFoolJourney(card);
 }
 
 function startShuffleAnimation() {
   resetLoadingUI();
+  resetJourneyUI();
   resultCard.classList.remove("hidden");
   emptyState.classList.add("hidden");
 
@@ -973,6 +1149,7 @@ function startShuffleAnimation() {
 
 function startThinkingAnimation(card) {
   cardVisual.classList.remove("shuffling");
+  cardVisual.classList.remove("can-enter-spirit");
   const rotateStyle = card.orientation === "reversed" ? "transform: rotate(180deg);" : "";
   cardVisual.innerHTML = `
     <img
@@ -992,7 +1169,50 @@ function startThinkingAnimation(card) {
   showLoadingBox();
 }
 
+function enableSpiritGuideEntry(card) {
+  if (!currentReadingContext || !currentReadingContext.readingId) return;
+
+  if (spiritEntryImageEl) {
+    spiritEntryImageEl.src = card.image;
+    spiritEntryImageEl.alt = card.name_zh;
+    spiritEntryImageEl.style.transform = card.orientation === "reversed" ? "rotate(180deg)" : "";
+  }
+
+  if (cardVisual) {
+    cardVisual.classList.add("can-enter-spirit");
+    cardVisual.setAttribute("role", "button");
+    cardVisual.setAttribute("tabindex", "0");
+    cardVisual.setAttribute("aria-label", `进入${card.name_zh}的牌灵导览`);
+  }
+}
+
 const questionTypeSelect = document.getElementById("questionType");
+
+function enterTarotTable() {
+  document.body.classList.remove("cover-mode");
+  document.body.classList.add("entered");
+  window.scrollTo({ top: 0, behavior: "auto" });
+  window.setTimeout(() => {
+    if (questionInput) questionInput.focus();
+  }, 80);
+}
+
+if (heroStartBtn) {
+  heroStartBtn.addEventListener("click", ev => {
+    ev.stopPropagation();
+    enterTarotTable();
+  });
+}
+
+if (tarotHeroEl) {
+  tarotHeroEl.addEventListener("click", enterTarotTable);
+  tarotHeroEl.addEventListener("keydown", ev => {
+    if (ev.key === "Enter" || ev.key === " ") {
+      ev.preventDefault();
+      enterTarotTable();
+    }
+  });
+}
 
 if (helpToggle && helpContent) {
   helpToggle.addEventListener("click", () => {
@@ -1016,7 +1236,38 @@ if (orientationHelpToggle && orientationHelpBox) {
 }
 
 if (questionTypeSelect) {
-  questionTypeSelect.addEventListener("change", updateQuestionPlaceholder);
+  questionTypeSelect.addEventListener("change", () => setActiveQuestionType(questionTypeSelect.value));
+}
+
+if (questionTypeCloudEl) {
+  questionTypeCloudEl.addEventListener("click", ev => {
+    const chip = ev.target.closest(".question-type-chip");
+    if (!chip) return;
+    const type = chip.getAttribute("data-type") || "love";
+    if (type === "custom") {
+      setActiveQuestionType("custom", chip.textContent.replace(/^#\s*/, ""));
+    } else {
+      setActiveQuestionType(type);
+    }
+  });
+}
+
+if (customQuestionTypeBtn && customQuestionTypeEl) {
+  customQuestionTypeBtn.addEventListener("click", () => {
+    const label = normalizeCustomType(customQuestionTypeEl.value);
+    if (!label) return;
+    setActiveQuestionType("custom", label);
+  });
+}
+
+if (customQuestionTypeEl) {
+  customQuestionTypeEl.addEventListener("keydown", ev => {
+    if (ev.key === "Enter" && !ev.isComposing) {
+      ev.preventDefault();
+      const label = normalizeCustomType(customQuestionTypeEl.value);
+      if (label) setActiveQuestionType("custom", label);
+    }
+  });
 }
 
 async function openSpiritSession() {
@@ -1039,20 +1290,46 @@ async function openSpiritSession() {
   startSpiritTimerWatcher();
 }
 
-if (spiritEnterBtn) {
-  spiritEnterBtn.addEventListener("click", async () => {
-    if (!currentReadingContext || !currentReadingContext.readingId) {
-      return;
-    }
+async function enterSpiritGuide() {
+  if (!currentReadingContext || !currentReadingContext.readingId) return;
 
-    try {
-      spiritEnterBtn.disabled = true;
-      await openSpiritSession();
-    } catch (err) {
-      appendSpiritMessage("assistant", `开启牌灵失败：${err.message || "未知错误"}`);
-    } finally {
-      spiritEnterBtn.disabled = false;
+  try {
+    if (spiritEnterBtn) spiritEnterBtn.disabled = true;
+    await openSpiritSession();
+    if (spiritPanelEl) {
+      spiritPanelEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
+  } catch (err) {
+    if (spiritPanelEl) spiritPanelEl.classList.remove("hidden");
+    appendSpiritMessage("assistant", `开启牌灵失败：${err.message || "未知错误"}`);
+  } finally {
+    if (spiritEnterBtn) spiritEnterBtn.disabled = false;
+  }
+}
+
+if (spiritEnterBtn) {
+  spiritEnterBtn.addEventListener("click", enterSpiritGuide);
+}
+
+if (cardVisual) {
+  cardVisual.addEventListener("click", () => {
+    if (!cardVisual.classList.contains("can-enter-spirit")) return;
+    enterSpiritGuide();
+  });
+  cardVisual.addEventListener("keydown", ev => {
+    if (!cardVisual.classList.contains("can-enter-spirit")) return;
+    if (ev.key === "Enter" || ev.key === " ") {
+      ev.preventDefault();
+      enterSpiritGuide();
+    }
+  });
+}
+
+if (journeyPanelEl) {
+  journeyPanelEl.addEventListener("click", ev => {
+    const gate = ev.target.closest(".journey-spirit-gate");
+    if (!gate) return;
+    enterSpiritGuide();
   });
 }
 
@@ -1381,6 +1658,7 @@ shuffleBtn.addEventListener("click", () => {
   }
 
   resetSpiritUI();
+  resetJourneyUI();
   currentReadingContext = null;
 
   pendingDrawCard = drawFromDeck().drawnCard;
@@ -1446,6 +1724,7 @@ cardBackButtons.forEach(btn => {
         document.getElementById("cardReading").textContent =
           buildFixedMeaning(pendingDrawCard) + "\n\n【这张牌照见了什么】\n解读生成失败：" + err.message;
         resetSpiritUI();
+        renderFoolJourney(pendingDrawCard);
         currentReadingContext = null;
       } finally {
         pendingDrawCard = null;

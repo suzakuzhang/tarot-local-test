@@ -992,9 +992,6 @@ def static_proxy(path):
 
 @app.route("/api/reading", methods=["POST"])
 def reading():
-    if not DEEPSEEK_API_KEY:
-        return jsonify({"error": "未检测到 DEEPSEEK_API_KEY 环境变量"}), 500
-
     data = request.get_json(force=True)
     access_session = _get_access_session(data)
     role = (access_session.get("role") if access_session else ROLE_NORMAL) or ROLE_NORMAL
@@ -1026,6 +1023,21 @@ def reading():
     element_hint = get_element_advice_hint(element)
     element_state_hint = get_element_state_hint(element, orientation)
     arcana_hint = infer_arcana_hint(card_data)
+
+    if not DEEPSEEK_API_KEY:
+        reading_id = card_spirit_sessions.create_reading(
+            card_name=card_name,
+            orientation=orientation,
+            question=effective_question,
+            direction=direction,
+        )
+        return jsonify({
+            "reading_id": reading_id,
+            "core": f"{card_data['name_zh']}没有给出一个确定答案,而是先把问题停在{orientation_label}的状态里。",
+            "context": f"放回「{effective_question}」,这张牌更像是在提醒你:先看清此刻真正牵动你的结构,再急着把它变成决定。",
+            "advice": "先不要把这次抽牌当成结论。把它当成一个可以继续追问的符号锚点:它照见的不是命运,而是你正在如何理解自己的处境。",
+            "fallback": True
+        })
 
     system_prompt = f"""
 你是一个有明确作者风格的塔罗解读者。你的语言不是通用安慰，也不是牌义说明书，而像是在对一个具体的人做一次近距离、克制、带张力的点破。

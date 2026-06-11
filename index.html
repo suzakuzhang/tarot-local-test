@@ -6,24 +6,50 @@
   <title>韦特大阿卡纳塔罗（测试版）</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
-<body>
+<body class="cover-mode">
   <main class="container">
-    <div class="top-bar">
-      <h1>韦特大阿卡纳塔罗（测试版）</h1>
-      <div class="top-actions">
-        <span id="accessStatusText" class="access-status">开放体验</span>
+    <section class="tarot-hero" id="tarotHero" role="button" tabindex="0" aria-label="进入塔罗牌桌">
+      <div class="hero-copy">
+        <p class="hero-kicker">AI-MEDIATED SYMBOLIC REFLECTION</p>
+        <h1>塔罗</h1>
+        <p class="hero-subtitle">
+          用一张牌,把问题放回可观看的符号里。这里不替你预言结果,只陪你看清问题如何被牌面、语境与直觉重新组织。
+        </p>
+        <div class="hero-actions">
+          <button id="heroStartBtn" type="button">开始洗牌</button>
+          <span id="accessStatusText" class="access-status">开放体验</span>
+        </div>
       </div>
-    </div>
+      <div class="hero-cards" aria-hidden="true">
+        <img class="hero-card hero-card-left" src="/assets/cards/major_arcana/00_fool.jpg" alt="" />
+        <img class="hero-card hero-card-center" src="/assets/tarotback.png" alt="" />
+        <img class="hero-card hero-card-right" src="/assets/cards/major_arcana/18_moon.jpg" alt="" />
+      </div>
+    </section>
     <p id="subtitle" class="subtitle"></p>
 
-    <section class="panel">
-      <label for="questionType">问题类型</label>
-      <select id="questionType">
-        <option value="love">感情</option>
-        <option value="work">工作</option>
-        <option value="emotion">情绪</option>
-        <option value="growth">自我成长</option>
-      </select>
+    <section id="readingPanel" class="panel reading-panel app-section">
+      <div class="question-type-field">
+        <label for="questionType">把问题放进一个主题</label>
+        <select id="questionType" class="native-type-select" aria-hidden="true" tabindex="-1">
+          <option value="love">情感</option>
+          <option value="work">工作</option>
+          <option value="emotion">情绪</option>
+          <option value="growth">个人成长</option>
+          <option value="custom">自定义</option>
+        </select>
+        <div id="questionTypeCloud" class="question-type-cloud" aria-label="选择问题类型">
+          <button class="question-type-chip is-active" type="button" data-type="love"># 情感</button>
+          <button class="question-type-chip" type="button" data-type="work"># 工作</button>
+          <button class="question-type-chip" type="button" data-type="emotion"># 情绪</button>
+          <button class="question-type-chip" type="button" data-type="growth"># 个人成长</button>
+        </div>
+        <div class="custom-type-row">
+          <input id="customQuestionType" type="text" maxlength="18" placeholder="或写一个自己的主题,如 #家庭 #创作 #去留" />
+          <button id="customQuestionTypeBtn" type="button">设为主题</button>
+        </div>
+        <p id="activeQuestionTypeHint" class="type-hint">当前主题:# 情感</p>
+      </div>
 
       <div class="question-block">
         <div class="label-row">
@@ -65,7 +91,7 @@
       </div>
     </section>
 
-    <section class="panel result-panel">
+    <section class="panel result-panel app-section">
       <h2>抽牌结果</h2>
 
       <div id="resultCard" class="result-card hidden">
@@ -98,12 +124,6 @@
           </div>
           <div id="cardReading" class="reading-box">-</div>
 
-          <div id="spiritEntry" class="spirit-entry hidden">
-            <h3>牌灵模式</h3>
-            <p id="spiritEntryHint">这张牌还有话没有说完。你可直接开启一次 10 分钟的延伸追问。</p>
-            <button id="spiritEnterBtn" type="button">进入牌灵模式</button>
-          </div>
-
           <div id="spiritPanel" class="spirit-panel hidden">
             <div class="spirit-panel-head">
               <strong>牌灵对话</strong>
@@ -121,6 +141,20 @@
               <button id="spiritEndBtn" type="button" class="ghost-btn">结束本轮</button>
             </div>
           </div>
+
+          <div id="journeyPanel" class="journey-panel hidden">
+            <div class="journey-head">
+              <p class="journey-kicker">FOOL'S JOURNEY</p>
+              <h3>把这张牌放回愚人旅程</h3>
+              <p id="journeySummary"></p>
+            </div>
+            <div class="journey-stage-row">
+              <div id="journeyPrev" class="journey-stage"></div>
+              <div id="journeyCurrent" class="journey-stage is-current"></div>
+              <div id="journeyNext" class="journey-stage"></div>
+            </div>
+            <div id="journeyRail" class="journey-rail" aria-label="大阿卡纳愚人旅程"></div>
+          </div>
         </div>
       </div>
 
@@ -129,7 +163,7 @@
       </div>
     </section>
 
-    <section id="advancedPanel" class="panel hidden">
+    <section id="advancedPanel" class="panel hidden app-section">
       <h2>先行工具</h2>
 
       <div id="stylePanel" class="advanced-block hidden">
@@ -171,8 +205,11 @@
       </div>
     </section>
 
-    <footer class="footer-note">
-      <p>A research prototype</p>
+    <footer class="footer-note app-section">
+      <p>
+        A research prototype on AI-mediated symbolic interpretation · by
+        <a href="https://github.com/suzakuzhang/tarot_local_test" target="_blank" rel="noreferrer">ShuminZhang</a>
+      </p>
     </footer>
   </main>
 
